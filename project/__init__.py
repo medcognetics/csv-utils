@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-try:
-    from .version import __version__
-except ImportError:
-    __version__ = "Unknown"
+import importlib.metadata
+
+
+__version__ = importlib.metadata.version("project")
