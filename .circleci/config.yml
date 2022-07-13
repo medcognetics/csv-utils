@@ -39,7 +39,7 @@ jobs:
             - save_cache:
                 paths:
                   - ~/.cache/pip
-                key: v1-dependencies-{{ checksum "setup.py" }}
+                key: v1-dependencies-{{ checksum "setup.cfg" }}
             - run:
                 name: Run tests
                 command: make test-ci
