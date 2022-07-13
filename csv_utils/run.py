@@ -68,12 +68,10 @@ def transform_csv(
         df = agg(loaded_inputs)
     else:
         raise RuntimeError("An aggregator must be provided when multiple inputs are used")
-    print(df)
 
     # run transforms
     transforms = [TRANSFORM_REGISTRY.get(name).instantiate_with_metadata().bind_metadata() for name in transform_names]
     for t in transforms:
         df = t(df)
-    print(df)
 
     return df
