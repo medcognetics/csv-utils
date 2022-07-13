@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from os import PathLike
 from pathlib import Path
-from typing import Callable, Iterable, List, Union, cast
+from typing import Iterable, List, Union
 
 import pandas as pd
 
@@ -46,7 +46,7 @@ def transform_csv(
     """
     # prepare input targets
     sources = [s if isinstance(s, pd.DataFrame) else Path(s) for s in sources]
-    inputs = [INPUT_REGISTRY.get(i) for i in input_names]
+    inputs = [INPUT_REGISTRY.get(i).instantiate_with_metadata().bind_metadata() for i in input_names]
     if len(inputs) != len(sources):
         if len(inputs) != 1:
             raise ValueError("Only one input should be given, or the number of inputs should match the number of paths")
@@ -57,24 +57,23 @@ def transform_csv(
     assert len(inputs) == len(sources)
     loaded_inputs: List[pd.DataFrame] = []
     for inp, s in zip(inputs, sources):
-        fn = cast(Callable[..., pd.DataFrame], inp)
-        df = fn(s)
+        df = inp(s)
         loaded_inputs.append(df)
 
     # if multiple inputs were loaded, run an aggregator to create a single dataframe
     if len(loaded_inputs) == 1:
         df = loaded_inputs[0]
     elif len(loaded_inputs) > 1:
-        agg = AGGREGATOR_REGISTRY.get(aggregator_name)
-        fn = cast(Callable[..., pd.DataFrame], agg)
-        df = fn(loaded_inputs)
+        agg = AGGREGATOR_REGISTRY.get(aggregator_name).instantiate_with_metadata().bind_metadata()
+        df = agg(loaded_inputs)
     else:
         raise RuntimeError("An aggregator must be provided when multiple inputs are used")
+    print(df)
 
     # run transforms
-    transforms = [TRANSFORM_REGISTRY.get_with_metadata(name) for name in transform_names]
+    transforms = [TRANSFORM_REGISTRY.get(name).instantiate_with_metadata().bind_metadata() for name in transform_names]
     for t in transforms:
-        fn = cast(Callable[..., pd.DataFrame], t.fn)
-        df = fn(df, **t.metadata)
+        df = t(df)
+    print(df)
 
     return df

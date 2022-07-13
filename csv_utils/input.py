@@ -11,12 +11,15 @@ InputFunction = Callable[[Path], pd.DataFrame]
 Aggregator = Callable[[Sequence[pd.DataFrame]], pd.DataFrame]
 TableTransform = Callable[[pd.DataFrame], pd.DataFrame]
 
-INPUT_REGISTRY = Registry("inputs", bind_metadata=True)
-AGGREGATOR_REGISTRY = Registry("aggregators")
+INPUT_REGISTRY = Registry("inputs", bound=Callable[..., pd.DataFrame])
+AGGREGATOR_REGISTRY = Registry("aggregators", bound=Callable[..., pd.DataFrame])
 
-INPUT_REGISTRY(pd.read_csv, name="csv")
-INPUT_REGISTRY(pd.read_csv, name="stats-csv", index_col="Study Path", dtype={"Data Source Case ID": str})
-INPUT_REGISTRY(pd.read_csv, name="scores-csv", index_col="cases")
+INPUT_REGISTRY(lambda x: cast(pd.DataFrame, pd.read_csv(x)), name="csv")
+INPUT_REGISTRY(
+    lambda x: cast(pd.DataFrame, pd.read_csv(x, index_col="Study Path", dtype={"Data Source Case ID": str})),
+    name="stats-csv",
+)
+INPUT_REGISTRY(lambda x: cast(pd.DataFrame, pd.read_csv(x, index_col="cases")), name="scores-csv")
 INPUT_REGISTRY(lambda x: x, name="noop")
 
 
@@ -35,7 +38,7 @@ def inference_csv(path: Path) -> pd.DataFrame:
     return df
 
 
-@AGGREGATOR_REGISTRY(name="join", how="inner")
+@AGGREGATOR_REGISTRY(name="join")
 def join(dataframes: Sequence[pd.DataFrame], **kwargs) -> pd.DataFrame:
     if len(dataframes) < 2:
         raise ValueError(f"Expected `len(dataframes)` >= 2, found {len(dataframes)}")

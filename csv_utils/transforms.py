@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, Sequence, Tuple, cast
+from typing import Any, Callable, Dict, Iterable, Sequence, Tuple, cast
 
 import pandas as pd
 from registry import Registry
 
 
-TRANSFORM_REGISTRY = Registry("transforms")
+TRANSFORM_REGISTRY = Registry("transforms", bound=Callable[..., pd.DataFrame])
 
 
 class Transform(ABC):
