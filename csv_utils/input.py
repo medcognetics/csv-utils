@@ -41,3 +41,10 @@ def join(dataframes: Sequence[pd.DataFrame], **kwargs) -> pd.DataFrame:
         raise ValueError(f"Expected `len(dataframes)` >= 2, found {len(dataframes)}")
     df1 = next(iter(dataframes))
     return df1.join(list(dataframes[1:]), **kwargs)
+
+
+@AGGREGATOR_REGISTRY(name="noop")
+def noop_aggregator(dataframes: Sequence[pd.DataFrame]) -> pd.DataFrame:
+    if len(dataframes) != 1:
+        raise ValueError("An aggregator must be provided when using multiple input DataFrames")
+    return next(iter(dataframes))

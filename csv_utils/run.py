@@ -13,7 +13,7 @@ from .transforms import TRANSFORM_REGISTRY
 def transform_csv(
     sources: Iterable[Union[pd.DataFrame, PathLike]],
     input_names: Iterable[str],
-    aggregator_name: str,
+    aggregator_name: str = "noop",
     transform_names: Iterable[str] = [],
 ) -> pd.DataFrame:
     r"""Applies a transformation pipeline to one or more input CSVs
