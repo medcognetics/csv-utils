@@ -136,4 +136,4 @@ coverage.xml
 .coverage
 
 *.orig.*
-**/verison.py
+**/version.py
