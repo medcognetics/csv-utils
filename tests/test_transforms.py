@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import numpy as np
 import pytest
 
-from csv_utils.transforms import DropWhere, KeepColumns, KeepWhere, NoopTransform
+from csv_utils.transforms import Discretize, DropWhere, KeepColumns, KeepWhere, NoopTransform
 
 
 def test_noop_transform(df_factory):
@@ -65,3 +66,29 @@ def test_drop_where(df_factory, col, value, as_str, allow_empty, exp):
     df = df_factory()
     result = DropWhere(col, value, as_str, allow_empty)(df)
     assert len(result) == exp
+
+
+@pytest.mark.parametrize(
+    "col,interval,output_colname,exp",
+    [
+        pytest.param("col1", [0, 2, 4, 6, 8, 10], None, "2 <= x < 4"),
+        pytest.param("col1", [0, 1.5, 3.0, 6, 8, 10], None, "1.5 <= x < 3.0"),
+        pytest.param("col1", [3, 4, 5], None, "< 3"),
+        pytest.param("col1", [0, 1, 2], None, ">= 2"),
+        pytest.param("col2", [0, 2, 4, 6, 8, 10], None, "2 <= x < 4"),
+        pytest.param("col1", [0, 2, 4, 6, 8, 10], "Dest Column", "2 <= x < 4"),
+        pytest.param("col1", [0, 2, 4, 6, 8, 10], "col1", "2 <= x < 4"),
+    ],
+)
+def test_discretize(df_factory, col, interval, output_colname, exp):
+    np.random.seed(42)
+    df = df_factory()
+    df[col] = np.random.rand(len(df[col])) * 10
+    df.loc[0, col] = 2.0
+    transform = Discretize(col, interval, output_colname)
+    result = transform(df)
+    assert len(result) == len(df)
+
+    output_colname = output_colname or col
+    target_col = df[output_colname]
+    assert target_col.loc[0] == exp

@@ -19,16 +19,30 @@ INPUT_REGISTRY(
     lambda x: cast(pd.DataFrame, pd.read_csv(x, index_col="Study Path", dtype={"Data Source Case ID": str})),
     name="stats-csv",
 )
-INPUT_REGISTRY(lambda x: cast(pd.DataFrame, pd.read_csv(x, index_col="cases")), name="scores-csv")
 INPUT_REGISTRY(lambda x: x, name="noop")
 
 
 @INPUT_REGISTRY(name="stats-csv")
-def stats_csv(path: Path) -> pd.DataFrame:
+def stats_csv(path: Path, stem: bool = False) -> pd.DataFrame:
     df = cast(pd.DataFrame, pd.read_csv(path, dtype={"Data Source Case ID": str, "Study Path": str}))
-    df["case"] = df["Study Path"].apply(lambda p: Path(p).name)
-    df.set_index("case", inplace=True)
+    if stem:
+        df["case"] = df["Study Path"].apply(lambda p: Path(p).name)
+        df.set_index("case", inplace=True)
+    else:
+        df.set_index("Study Path", inplace=True)
     return df
+
+
+@INPUT_REGISTRY(name="scores-csv")
+def scores_csv(path: Path, stem: bool = False) -> pd.DataFrame:
+    df = cast(pd.DataFrame, pd.read_csv(path, index_col="cases", dtype={"cases": str}))
+    if stem:
+        df.index = df.index.map(lambda x: Path(x).name)
+    return df
+
+
+INPUT_REGISTRY(stats_csv, name="stats-csv-stem", stem=True)
+INPUT_REGISTRY(scores_csv, name="scores-csv-stem", stem=True)
 
 
 @INPUT_REGISTRY(name="inference-csv")

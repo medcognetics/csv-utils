@@ -36,10 +36,9 @@ def test_basic_run(setup_basic_test):
     output = transform_csv(paths, input_names, aggregator_name, transform_names)
     assert list(output.columns) == [
         "Data Source Case ID",
-        "Study Path",
         "Ground Truth",
         "Study",
         "score",
     ]
-    assert output.index.name == "case"
+    assert output.index.name == "Study Path"
     assert len(output) == 10
