@@ -60,6 +60,13 @@ def join(dataframes: Sequence[pd.DataFrame], **kwargs) -> pd.DataFrame:
     return df1.join(list(dataframes[1:]), **kwargs)
 
 
+@AGGREGATOR_REGISTRY(name="concat")
+def concat(dataframes: Sequence[pd.DataFrame], **kwargs) -> pd.DataFrame:
+    if len(dataframes) < 2:
+        raise ValueError(f"Expected `len(dataframes)` >= 2, found {len(dataframes)}")
+    return pd.concat(dataframes, **kwargs)
+
+
 @AGGREGATOR_REGISTRY(name="noop")
 def noop_aggregator(dataframes: Sequence[pd.DataFrame]) -> pd.DataFrame:
     if len(dataframes) != 1:

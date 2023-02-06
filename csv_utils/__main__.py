@@ -27,7 +27,7 @@ def main(args: Namespace) -> None:
 
 
 def parse_args() -> Namespace:
-    parser = ArgumentParser(prog="performance-test")
+    parser = ArgumentParser(prog="csv-utils")
     parser.add_argument("tables", nargs="+", type=Path, help="paths to files with table of entries")
     parser.add_argument("-d", "--dest", type=Path, default=None, help="destination for ouptuts")
     parser.add_argument(
