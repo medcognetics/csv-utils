@@ -1,7 +1,52 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from csv_utils.input import concat, join
+from pathlib import Path
+
+from csv_utils.input import concat, data_organizer_csv, join, scores_csv, stats_csv, triage_csv
+
+
+def test_stats_csv(tmp_path, df_factory):
+    df = df_factory(columns=["Data Source Case ID", "Study Path"])
+    path = Path(tmp_path, "df.csv")
+    df.to_csv(path, index=False)
+    result = stats_csv(path)
+    assert result.index.name == "Study Path"
+    assert "Data Source Case ID" in result.columns
+    assert len(result) == len(df)
+
+
+def test_scores_csv(tmp_path, df_factory):
+    df = df_factory(columns=["cases", "scores"])
+    df["cases"] = df["cases"].apply(lambda x: Path(f"case{x}"))
+    path = Path(tmp_path, "df.csv")
+    df.to_csv(path, index=False)
+    result = scores_csv(path)
+    assert result.index.name == "cases"
+    assert "scores" in result.columns
+    assert len(result) == len(df)
+
+
+def test_data_organizer_csv(tmp_path, df_factory):
+    df = df_factory(columns=["Patient", "Density"])
+    path = Path(tmp_path, "df.csv")
+    df.to_csv(path, index=False)
+    result = data_organizer_csv(path)
+    assert result.index.name == "Patient"
+    assert "Density" in result.columns
+    assert len(result) == len(df)
+
+
+def test_triage_csv(tmp_path, df_factory):
+    df = df_factory(columns=["path", "score"])
+    df["path"] = df["path"].apply(lambda x: Path(f"/path/to/patient_{x}/study_{x}/file_{x}.dcm"))
+    df["malign_score"] = 0.5
+    path = Path(tmp_path, "df.csv")
+    df.to_csv(path, index=False)
+    result = triage_csv(path)
+    assert result.index.name == "Patient"
+    assert "malign_score" in result.columns
+    assert len(result) == len(df)
 
 
 def test_join(df_factory):

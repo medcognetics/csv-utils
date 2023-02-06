@@ -3,7 +3,7 @@
 try:
     from .version import __version__
 except ImportError:
-    __version__ = "Unknown"
+    __version__ = "Unknown"  # nocover
 
 from .input import AGGREGATOR_REGISTRY, INPUT_REGISTRY
 from .run import transform_csv
