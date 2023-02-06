@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import numpy as np
+import pandas as pd
 import pytest
 
 from csv_utils.transforms import Discretize, DropWhere, KeepColumns, KeepWhere, NoopTransform
@@ -78,6 +79,7 @@ def test_drop_where(df_factory, col, value, as_str, allow_empty, exp):
         pytest.param("col2", [0, 2, 4, 6, 8, 10], None, "2 <= x < 4"),
         pytest.param("col1", [0, 2, 4, 6, 8, 10], "Dest Column", "2 <= x < 4"),
         pytest.param("col1", [0, 2, 4, 6, 8, 10], "col1", "2 <= x < 4"),
+        pytest.param("col1", [0, 2, 4, 6, 8, 10], "col1", "2 <= x < 4"),
     ],
 )
 def test_discretize(df_factory, col, interval, output_colname, exp):
@@ -85,6 +87,7 @@ def test_discretize(df_factory, col, interval, output_colname, exp):
     df = df_factory()
     df[col] = np.random.rand(len(df[col])) * 10
     df.loc[0, col] = 2.0
+    df.loc[1, col] = pd.NA
     transform = Discretize(col, interval, output_colname)
     result = transform(df)
     assert len(result) == len(df)
