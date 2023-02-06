@@ -22,6 +22,14 @@ INPUT_REGISTRY(
 INPUT_REGISTRY(lambda x: x, name="noop")
 
 
+def get_study(s: str) -> str:
+    return Path(s).parent.name
+
+
+def get_patient(s: str) -> str:
+    return Path(s).parents[1].name
+
+
 @INPUT_REGISTRY(name="stats-csv")
 def stats_csv(path: Path, stem: bool = False) -> pd.DataFrame:
     df = cast(pd.DataFrame, pd.read_csv(path, dtype={"Data Source Case ID": str, "Study Path": str}))
@@ -38,6 +46,24 @@ def scores_csv(path: Path, stem: bool = False) -> pd.DataFrame:
     df = cast(pd.DataFrame, pd.read_csv(path, index_col="cases", dtype={"cases": str}))
     if stem:
         df.index = df.index.map(lambda x: Path(x).name)
+    return df
+
+
+@INPUT_REGISTRY(name="data-csv")
+def data_organizer_csv(p: Path, index_col: str = "Patient", **kwargs) -> pd.DataFrame:
+    r"""Reads CSVs from the data organizer."""
+    df = pd.read_csv(p, index_col="Patient", **kwargs)
+    return cast(pd.DataFrame, df)
+
+
+@INPUT_REGISTRY(name="triage-csv")
+def triage_csv(p: Path) -> pd.DataFrame:
+    r"""Reads triage CSVs from medcog-efficientdet"""
+    df = cast(pd.DataFrame, pd.read_csv(p))
+    df["Patient"] = df["path"].apply(get_patient)
+    df.set_index("Patient", inplace=True)
+    df["Study"] = df["path"].apply(get_study)
+    df["scores"] = df["malign_score"]
     return df
 
 
