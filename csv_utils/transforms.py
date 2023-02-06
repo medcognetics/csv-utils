@@ -52,7 +52,7 @@ class Discretize(Transform):
 
         # map bin assignments to clean string names
         discretized = [name_dict.get(g, "NA") for g in groups]
-        df[self.output_column] = discretized
+        df.loc[valid, self.output_column] = discretized
         return df
 
     @classmethod
