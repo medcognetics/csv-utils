@@ -32,6 +32,7 @@ def get_patient(s: str) -> str:
 
 @INPUT_REGISTRY(name="stats-csv")
 def stats_csv(path: Path, stem: bool = False) -> pd.DataFrame:
+    r"""Reads a pre-data-organizer stats tool CSV"""
     df = cast(pd.DataFrame, pd.read_csv(path, dtype={"Data Source Case ID": str, "Study Path": str}))
     if stem:
         df["case"] = df["Study Path"].apply(lambda p: Path(p).name)
@@ -43,6 +44,7 @@ def stats_csv(path: Path, stem: bool = False) -> pd.DataFrame:
 
 @INPUT_REGISTRY(name="scores-csv")
 def scores_csv(path: Path, stem: bool = False) -> pd.DataFrame:
+    r"""Reads a pre-triage CLI output from medcog-efficientdet"""
     df = cast(pd.DataFrame, pd.read_csv(path, index_col="cases", dtype={"cases": str}))
     if stem:
         df.index = df.index.map(lambda x: Path(x).name)

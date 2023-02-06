@@ -92,7 +92,6 @@ class KeepWhere(Transform):
         cls,
         df: pd.DataFrame,
         columns: Iterable[str] = [],
-        string_values: bool = False,
         as_string: bool = True,
         discretizers: Optional[Iterable[str]] = None,
         **kwargs,
