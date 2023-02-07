@@ -94,8 +94,25 @@ class KeepWhere(Transform):
         columns: Iterable[str] = [],
         as_string: bool = True,
         discretizers: Optional[Iterable[str]] = None,
+        allow_missing_column: bool = False,
         **kwargs,
     ) -> Dict[Tuple[str, Any], "KeepWhere"]:
+        r"""Create a KeepWhere transform for each unique value in the given columns.
+
+        Args:
+            df: The dataframe to use for creating the transforms.
+            columns: The columns to use for creating the transforms. If empty, all columns
+                will be used.
+            as_string: If True, the values will be converted to strings before comparison.
+            discretizers: If given, the columns will be discretized using the given
+                discretizers.
+            allow_missing_column: If True, columns that are not in the dataframe will be
+                ignored. Otherwise, a :class:`KeyError` will be raised.
+            **kwargs: Additional keyword arguments to pass to the KeepWhere constructor.
+
+        Returns:
+            A dictionary mapping (column, value) pairs to KeepWhere transforms.
+        """
         columns = list(columns or df.columns)
         result: Dict[Tuple[str, Any], KeepWhere] = {}
 
@@ -106,6 +123,10 @@ class KeepWhere(Transform):
                 df = func(df)
 
         for colname in columns:
+            if colname not in df.columns:
+                if allow_missing_column:
+                    continue
+                raise KeyError(f"column {colname} not in df.columns {df.columns}")
             for value in df[colname].unique():
                 value = str(value) if as_string else value
                 key = (colname, value)
@@ -115,6 +136,8 @@ class KeepWhere(Transform):
 
     @classmethod
     def format_name(cls, colname: str, value: Any) -> str:
+        r"""Format a column name and value into a human-readable string for use in a registry"""
+
         def prepare_str(x: Any) -> str:
             return str(x).strip().lower().replace(" ", "_")
 

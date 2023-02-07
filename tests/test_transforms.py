@@ -52,6 +52,16 @@ def test_keep_where_from_df(df_factory):
     assert all(isinstance(v, KeepWhere) for v in result.values())
 
 
+@pytest.mark.parametrize("allow_missing", [True, pytest.param(False, marks=pytest.mark.xfail(raises=KeyError))])
+def test_keep_where_missing_column(df_factory, allow_missing):
+    df = df_factory()
+    result = {
+        KeepWhere.format_name(*k): v
+        for k, v in KeepWhere.from_dataframe(df, columns=["foo"], allow_missing_column=allow_missing).items()
+    }
+    assert not result
+
+
 @pytest.mark.parametrize(
     "col,value,as_str,allow_empty,exp",
     [
