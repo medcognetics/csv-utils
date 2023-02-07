@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from pathlib import Path
-from typing import Callable, Sequence, cast
+from typing import Any, Callable, Dict, List, Sequence, Tuple, cast
 
 import pandas as pd
 from registry import Registry
@@ -93,6 +93,31 @@ def concat(dataframes: Sequence[pd.DataFrame], **kwargs) -> pd.DataFrame:
     if len(dataframes) < 2:
         raise ValueError(f"Expected `len(dataframes)` >= 2, found {len(dataframes)}")
     return pd.concat(dataframes, **kwargs)
+
+
+@AGGREGATOR_REGISTRY(name="join-or-concat")
+def join_or_concat(
+    dataframes: Sequence[pd.DataFrame],
+    concat_kwargs: Dict[str, Any] = {},
+    join_kwargs: Dict[str, Any] = {},
+) -> pd.DataFrame:
+    r"""Aggregates dataframes by joining or concatenating, depending on whether the dataframes have the same
+    column set. Identical column sets will be concatenated, otherwise joined.
+    """
+    if len(dataframes) < 2:
+        raise ValueError(f"Expected `len(dataframes)` >= 2, found {len(dataframes)}")
+
+    # group dataframes by unique column set
+    df_groups: Dict[Tuple[str, ...], List[pd.DataFrame]] = {}
+    for df in dataframes:
+        key = tuple(sorted(df.columns))
+        df_groups.setdefault(key, []).append(df)
+
+    # concat dataframes with unique column sets
+    concat_dfs = [pd.concat(dfs, **concat_kwargs) for dfs in df_groups.values()]
+    assert len(concat_dfs)
+    df1 = next(iter(concat_dfs))
+    return df1.join(concat_dfs[1:], **join_kwargs)
 
 
 @AGGREGATOR_REGISTRY(name="noop")
