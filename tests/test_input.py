@@ -3,7 +3,9 @@
 
 from pathlib import Path
 
-from csv_utils.input import concat, data_organizer_csv, join, scores_csv, stats_csv, triage_csv
+import pandas as pd
+
+from csv_utils.input import concat, data_organizer_csv, join, join_or_concat, scores_csv, stats_csv, triage_csv
 
 
 def test_stats_csv(tmp_path, df_factory):
@@ -63,3 +65,13 @@ def test_concat(df_factory):
     df3 = df_factory().iloc[4:]
     df = concat([df1, df2, df3])
     assert (df == df_factory()).all().all()
+
+
+def test_join_or_concat(df_factory):
+    df1 = df_factory(columns=["col1", "col2"]).iloc[:4]
+    df2 = df_factory(columns=["col1", "col2"]).iloc[4:]
+    df3 = df_factory(columns=["col3"]).iloc[:4]
+    df4 = df_factory(columns=["col3"]).iloc[4:]
+    expected = pd.concat([df1, df2]).join(pd.concat([df3, df4]))
+    df = join_or_concat([df1, df2, df3, df4])
+    assert (df == expected).all().all()
