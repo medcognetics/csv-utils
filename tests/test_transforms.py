@@ -36,6 +36,11 @@ def test_keep_columns(df_factory, cols):
         pytest.param("col2", 1, False, True, 1),
         pytest.param("col1", 1, False, False, 0, marks=pytest.mark.xfail(raises=ValueError)),
         pytest.param("nocol", 1, False, True, 1, marks=pytest.mark.xfail(raises=KeyError)),
+        pytest.param(["col1", "col2"], [0, 1], False, True, 1),
+        pytest.param(["col1", "col2"], [0, 0], False, True, 0),
+        pytest.param(["col1", "col2"], [1, 1], False, True, 0),
+        pytest.param(["col1", "col2"], [1], False, True, 0, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(["col1", "col2"], 1, False, True, 0, marks=pytest.mark.xfail(raises=TypeError)),
     ],
 )
 def test_keep_where(df_factory, col, value, as_str, allow_empty, exp):
@@ -71,6 +76,11 @@ def test_keep_where_missing_column(df_factory, allow_missing):
         pytest.param("col2", 1, False, True, 9),
         pytest.param("col1", 1, False, False, 10, marks=pytest.mark.xfail(raises=ValueError)),
         pytest.param("nocol", 1, False, True, 10, marks=pytest.mark.xfail(raises=KeyError)),
+        pytest.param(["col1", "col2"], [0, 1], False, True, 9),
+        pytest.param(["col1", "col2"], [0, 0], False, True, 10),
+        pytest.param(["col1", "col2"], [1, 1], False, True, 10),
+        pytest.param(["col1", "col2"], [1], False, True, 10, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param(["col1", "col2"], 1, False, True, 10, marks=pytest.mark.xfail(raises=TypeError)),
     ],
 )
 def test_drop_where(df_factory, col, value, as_str, allow_empty, exp):
