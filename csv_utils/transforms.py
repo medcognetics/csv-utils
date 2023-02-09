@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -69,30 +69,51 @@ class Discretize(Transform):
 
 @dataclass
 class KeepWhere(Transform):
-    r"""Keep rows where `column == value`
+    r"""Keep rows where `column == value`. If `column` is a sequence, then
+    `value` must be a sequence of the same length, and the mask is the
+    logical and of the masks for each column/value pair.
 
     Args:
-        column: column to filter on
-        value: value to filter on
+        column: column or columns to filter on
+        value: value or values to filter on
         as_string: if True, convert value to string before comparison
         allow_empty: if True, allow empty result
     """
-    column: str
+    column: Union[str, Sequence[str]]
     value: Any
     as_string: bool = True
     allow_empty: bool = False
 
+    def __post_init__(self):
+        if isinstance(self.column, str):
+            self.column = [self.column]
+        else:
+            if not isinstance(self.value, Sequence):
+                raise TypeError(f"value {self.value} must be a sequence if column is a sequence")
+            elif not len(self.column) == len(self.value):
+                raise ValueError(f"columns {self.column} and values {self.value} must be same length")
+
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
-        if self.column not in table.columns:
-            raise KeyError(f"column {self.column} not in table.columns {table.columns}")
+        assert isinstance(self.column, Sequence) and not isinstance(self.column, str)
+        for c in self.column:
+            if c not in table.columns:
+                raise KeyError(f"column {c} not in table.columns {table.columns}")
         result = cast(pd.DataFrame, table[self.get_mask(table)])
         if not len(result) and not self.allow_empty:
             raise ValueError(f"Filter {self} produced an empty result")
         return result
 
     def get_mask(self, table: pd.DataFrame) -> Any:
-        value = str(self.value) if self.as_string else self.value
-        column = table[self.column].astype(str) if self.as_string else table[self.column]
+        if len(self.column) == 1:
+            return self._get_mask_for_column(table, self.column[0], self.value)
+        else:
+            return np.logical_and.reduce(
+                [self._get_mask_for_column(table, c, v) for c, v in zip(self.column, self.value)]
+            )
+
+    def _get_mask_for_column(self, table: pd.DataFrame, col: str, value: Any) -> bool:
+        value = str(value) if self.as_string else value
+        column = table[col].astype(str) if self.as_string else table[col]
         return column == value
 
     @classmethod
@@ -154,11 +175,13 @@ class KeepWhere(Transform):
 
 @dataclass
 class DropWhere(KeepWhere):
-    r"""Drop rows where `column == value`
+    r"""Drop rows where `column == value`. If `column` is a sequence, then
+    `value` must be a sequence of the same length, and the mask is the
+    logical and of the masks for each column/value pair.
 
     Args:
-        column: column to filter on
-        value: value to filter on
+        column: column or columns to filter on
+        value: value or values to filter on
         as_string: if True, convert value to string before comparison
         allow_empty: if True, allow empty result
         allow_missing_column: if True, allow missing column
@@ -166,8 +189,9 @@ class DropWhere(KeepWhere):
     allow_missing_column: bool = False
 
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
-        if self.column not in table.columns and self.allow_missing_column:
-            return table
+        for c in self.column:
+            if c not in table.columns and self.allow_missing_column:
+                return table
         return super().__call__(table)
 
     def get_mask(self, table: pd.DataFrame) -> Any:
