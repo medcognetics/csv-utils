@@ -5,6 +5,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from .input import AGGREGATOR_REGISTRY, INPUT_REGISTRY
+from .output import OUTPUT_REGISTRY
 from .run import transform_csv
 from .transforms import TRANSFORM_REGISTRY
 
@@ -16,14 +17,8 @@ def main(args: Namespace) -> None:
         args.aggregator,
         args.transforms,
     )
-
-    if args.dest is None:
-        print(df.to_string())
-    else:
-        path = Path(args.dest)
-        if not path.parent.is_dir():
-            raise NotADirectoryError(path.parent)
-        df.to_csv(path)
+    output = OUTPUT_REGISTRY.get(args.output).instantiate_with_metadata()
+    output(df, args.dest)
 
 
 def parse_args() -> Namespace:
@@ -41,7 +36,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "-a",
         "--aggregator",
-        default="join",
+        default="join-or-concat",
         choices=AGGREGATOR_REGISTRY.available_keys(),
         help="registered names of aggregation handlers",
     )
@@ -49,12 +44,23 @@ def parse_args() -> Namespace:
         "-t",
         "--transforms",
         nargs="+",
-        default=["noop"],
+        default=[],
         choices=TRANSFORM_REGISTRY.available_keys(),
         help="registered names of input transforms",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        default="print",
+        choices=OUTPUT_REGISTRY.available_keys(),
+        help="registered names of output handlers",
     )
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def entrypoint():
     main(parse_args())
+
+
+if __name__ == "__main__":
+    entrypoint()
