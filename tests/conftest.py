@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
@@ -24,3 +25,20 @@ def df_factory():
         return pd.DataFrame(rows)
 
     return func
+
+
+@pytest.fixture
+def setup_basic_test(tmp_path, df_factory):
+    stats_df = df_factory(["Data Source Case ID", "Study Path", "Ground Truth"], as_str=True)
+    scores_df = df_factory(["Study", "cases", "score"], as_str=True)
+
+    stats_path = Path(tmp_path, "stats.csv")
+    stats_df.to_csv(stats_path, index=False)
+
+    scores_path = Path(tmp_path, "scores.csv")
+    scores_df.to_csv(scores_path, index=False)
+
+    return {
+        "stats": stats_path,
+        "scores": scores_path,
+    }
