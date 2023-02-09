@@ -35,7 +35,7 @@ def test_keep_columns(df_factory, cols):
         pytest.param("col1", "0", False, True, 0),
         pytest.param("col2", 1, False, True, 1),
         pytest.param("col1", 1, False, False, 0, marks=pytest.mark.xfail(raises=ValueError)),
-        pytest.param("nocol", 1, False, True, 1, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param("nocol", 1, False, True, 1, marks=pytest.mark.xfail(raises=KeyError)),
     ],
 )
 def test_keep_where(df_factory, col, value, as_str, allow_empty, exp):
@@ -70,13 +70,19 @@ def test_keep_where_missing_column(df_factory, allow_missing):
         pytest.param("col1", "0", False, True, 10),
         pytest.param("col2", 1, False, True, 9),
         pytest.param("col1", 1, False, False, 10, marks=pytest.mark.xfail(raises=ValueError)),
-        pytest.param("nocol", 1, False, True, 10, marks=pytest.mark.xfail(raises=ValueError)),
+        pytest.param("nocol", 1, False, True, 10, marks=pytest.mark.xfail(raises=KeyError)),
     ],
 )
 def test_drop_where(df_factory, col, value, as_str, allow_empty, exp):
     df = df_factory()
     result = DropWhere(col, value, as_str, allow_empty)(df)
     assert len(result) == exp
+
+
+@pytest.mark.parametrize("allow_missing", [True, pytest.param(False, marks=pytest.mark.xfail(raises=KeyError))])
+def test_drop_where_missing_col(df_factory, allow_missing):
+    df = df_factory()
+    DropWhere("NOT_HERE", 0, allow_missing_column=allow_missing)(df)
 
 
 @pytest.mark.parametrize(

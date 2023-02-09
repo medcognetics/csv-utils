@@ -69,6 +69,14 @@ class Discretize(Transform):
 
 @dataclass
 class KeepWhere(Transform):
+    r"""Keep rows where `column == value`
+
+    Args:
+        column: column to filter on
+        value: value to filter on
+        as_string: if True, convert value to string before comparison
+        allow_empty: if True, allow empty result
+    """
     column: str
     value: Any
     as_string: bool = True
@@ -76,7 +84,7 @@ class KeepWhere(Transform):
 
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
         if self.column not in table.columns:
-            raise ValueError(f"column {self.column} not in table.columns {table.columns}")
+            raise KeyError(f"column {self.column} not in table.columns {table.columns}")
         result = cast(pd.DataFrame, table[self.get_mask(table)])
         if not len(result) and not self.allow_empty:
             raise ValueError(f"Filter {self} produced an empty result")
@@ -146,6 +154,22 @@ class KeepWhere(Transform):
 
 @dataclass
 class DropWhere(KeepWhere):
+    r"""Drop rows where `column == value`
+
+    Args:
+        column: column to filter on
+        value: value to filter on
+        as_string: if True, convert value to string before comparison
+        allow_empty: if True, allow empty result
+        allow_missing_column: if True, allow missing column
+    """
+    allow_missing_column: bool = False
+
+    def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
+        if self.column not in table.columns and self.allow_missing_column:
+            return table
+        return super().__call__(table)
+
     def get_mask(self, table: pd.DataFrame) -> Any:
         return ~super().get_mask(table)
 
