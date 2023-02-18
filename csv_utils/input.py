@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import pdb
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Sequence, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 
 import pandas as pd
 from registry import Registry
@@ -14,7 +15,6 @@ TableTransform = Callable[[pd.DataFrame], pd.DataFrame]
 INPUT_REGISTRY = Registry("inputs", bound=Callable[..., pd.DataFrame])
 AGGREGATOR_REGISTRY = Registry("aggregators", bound=Callable[..., pd.DataFrame])
 
-INPUT_REGISTRY(lambda x: cast(pd.DataFrame, pd.read_csv(x)), name="csv")
 INPUT_REGISTRY(
     lambda x: cast(pd.DataFrame, pd.read_csv(x, index_col="Study Path", dtype={"Data Source Case ID": str})),
     name="stats-csv",
@@ -80,6 +80,20 @@ def inference_csv(path: Path) -> pd.DataFrame:
     return df
 
 
+@INPUT_REGISTRY(name="csv")
+def first_index_csv(path: Path) -> pd.DataFrame:
+    df = cast(pd.DataFrame, pd.read_csv(path))
+    df.set_index(df.columns[0], inplace=True)
+    return df
+
+
+@INPUT_REGISTRY(name="excel")
+def first_index_excel(path: Path) -> pd.DataFrame:
+    df = cast(pd.DataFrame, pd.read_excel(path))
+    df.set_index(df.columns[0], inplace=True)
+    return df
+
+
 @AGGREGATOR_REGISTRY(name="join")
 def join(dataframes: Sequence[pd.DataFrame], **kwargs) -> pd.DataFrame:
     if len(dataframes) < 2:
@@ -95,6 +109,33 @@ def concat(dataframes: Sequence[pd.DataFrame], **kwargs) -> pd.DataFrame:
     return pd.concat(dataframes, **kwargs)
 
 
+@AGGREGATOR_REGISTRY(name="pdb")
+def pdb_agg(dataframes: Sequence[pd.DataFrame], **kwargs) -> pd.DataFrame:
+    # Manually join the dataframes
+    result: Optional[pd.DataFrame] = None
+    pdb.set_trace()
+    assert result is not None, "result must be set"
+    return result
+
+
+@AGGREGATOR_REGISTRY(name="merge")
+def merge(dataframes: Sequence[pd.DataFrame], **kwargs) -> pd.DataFrame:
+    r"""Attempts to merge two dataframes, accounting for the possibility that they have different columns
+    or overlapping columns. Values in the first dataframe are preferred over the second dataframe.
+    """
+    if len(dataframes) > 2:
+        raise ValueError(f"Expected `len(dataframes)` <= 2, found {len(dataframes)}")
+    df1, df2 = dataframes
+    # join the two dataframes, adding a right suffix
+    df = df1.join(df2, how="outer", rsuffix="_r")
+    # update unsuffixed nan values from df1 with suffixed values from df2
+    df.update(df2, overwrite=False)
+    # drop suffixed columns
+    df.drop(df.filter(regex="_r$").columns.tolist(), axis=1, inplace=True)
+    return df
+
+
+@AGGREGATOR_REGISTRY(name="join-or-concat-outer", join_kwargs={"how": "outer"})
 @AGGREGATOR_REGISTRY(name="join-or-concat")
 def join_or_concat(
     dataframes: Sequence[pd.DataFrame],

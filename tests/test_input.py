@@ -4,8 +4,39 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
-from csv_utils.input import concat, data_organizer_csv, join, join_or_concat, scores_csv, stats_csv, triage_csv
+from csv_utils.input import (
+    concat,
+    data_organizer_csv,
+    first_index_csv,
+    first_index_excel,
+    join,
+    join_or_concat,
+    merge,
+    pdb_agg,
+    scores_csv,
+    stats_csv,
+    triage_csv,
+)
+
+
+def test_csv(tmp_path, df_factory):
+    df = df_factory(columns=["Data Source Case ID", "Study Path"])
+    path = Path(tmp_path, "df.csv")
+    df.to_csv(path, index=False)
+    result = first_index_csv(path)
+    assert result.index.name == "Data Source Case ID"
+    assert len(result) == len(df)
+
+
+def test_excel(tmp_path, df_factory):
+    df = df_factory(columns=["Data Source Case ID", "Study Path"])
+    path = Path(tmp_path, "df.xlsx")
+    df.to_excel(path, index=False)
+    result = first_index_excel(path)
+    assert result.index.name == "Data Source Case ID"
+    assert len(result) == len(df)
 
 
 def test_stats_csv(tmp_path, df_factory):
@@ -75,3 +106,24 @@ def test_join_or_concat(df_factory):
     expected = pd.concat([df1, df2]).join(pd.concat([df3, df4]))
     df = join_or_concat([df1, df2, df3, df4])
     assert (df == expected).all().all()
+
+
+def test_merge(df_factory):
+    df1 = df_factory(columns=["col1", "col2"]).iloc[:6]
+    df2 = df_factory(columns=["col2", "col3"]).iloc[4:]
+    expected = df1.join(df2, rsuffix="_r", how="outer")
+    expected.update(df2, overwrite=False)
+    expected.drop(expected.filter(regex="_r$").columns.tolist(), axis=1, inplace=True)
+    df = merge([df1, df2])
+    pd.testing.assert_frame_equal(df, expected)
+    assert set(df.columns) == {"col1", "col2", "col3"}
+
+
+def test_pdb(mocker, df_factory):
+    m = mocker.MagicMock()
+    mocker.patch("pdb.set_trace", m)
+    df1 = df_factory().loc[:, ("col1",)]
+    df2 = df_factory().loc[:, ("col2",)]
+    with pytest.raises(AssertionError):
+        pdb_agg([df1, df2])
+    m.assert_called_once()
