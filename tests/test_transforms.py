@@ -49,6 +49,21 @@ def test_keep_where(df_factory, col, value, as_str, allow_empty, exp):
     assert len(result) == exp
 
 
+@pytest.mark.parametrize(
+    "col,value,exp",
+    [
+        pytest.param("value", "val", True),
+        pytest.param("value", "lue", True),
+        pytest.param("value", "foo", False),
+        pytest.param("1,2,3", "1", True),
+    ],
+)
+def test_keep_where_contains(col, value, exp):
+    df = pd.DataFrame({"colname": [col]})
+    result = KeepWhere("colname", value, contains=True, allow_empty=True)(df)
+    assert bool(len(result)) == exp
+
+
 def test_keep_where_from_df(df_factory):
     df = df_factory()
     result = {KeepWhere.format_name(*k): v for k, v in KeepWhere.from_dataframe(df).items()}

@@ -78,11 +78,13 @@ class KeepWhere(Transform):
         value: value or values to filter on
         as_string: if True, convert value to string before comparison
         allow_empty: if True, allow empty result
+        contains: if True, use `in` instead of `==`. String comparisons only.
     """
     column: Union[str, Sequence[str]]
     value: Any
     as_string: bool = True
     allow_empty: bool = False
+    contains: bool = False
 
     def __post_init__(self):
         if isinstance(self.column, str):
@@ -111,10 +113,10 @@ class KeepWhere(Transform):
                 [self._get_mask_for_column(table, c, v) for c, v in zip(self.column, self.value)]
             )
 
-    def _get_mask_for_column(self, table: pd.DataFrame, col: str, value: Any) -> bool:
+    def _get_mask_for_column(self, table: pd.DataFrame, col: str, value: Any) -> Any:
         value = str(value) if self.as_string else value
         column = table[col].astype(str) if self.as_string else table[col]
-        return column == value
+        return column == value if not self.contains else column.apply(lambda x: value in str(x))
 
     @classmethod
     def from_dataframe(
@@ -184,6 +186,7 @@ class DropWhere(KeepWhere):
         value: value or values to filter on
         as_string: if True, convert value to string before comparison
         allow_empty: if True, allow empty result
+        contains: if True, use `in` instead of `==`. String comparisons only.
         allow_missing_column: if True, allow missing column
     """
     allow_missing_column: bool = False
