@@ -1,10 +1,33 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]   # PEP 508 specifications.
-build-backend = "setuptools.build_meta"
+requires = ["pdm-pep517>=1.0"]
+build-backend = "pdm.pep517.api"
+
+[project]
+name = "csv-utils"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.8"
+authors = [
+    {name = "Scott Chase Waggener", email = "tidalpaladin@protonmail.com"},
+]
+dependencies = [
+  "numpy",
+  "pandas",
+  "openpyxl",
+  "registry @ git+https://github.com/TidalPaladin/callable-registry.git",
+]
+readme = "README.md"
+license = {text = "Apache"}
+
+[project.optional-dependencies]
+
+[tool.autoflake]
+remove-all-unused-imports = true
+remove-unused-variables = true
 
 [tool.autopep8]
 max_line_length = 120
-ignore = "E501,W6"  # or ["E501", "W6"]
+ignore = "E501,W6,E203"
 in-place = true
 recursive = true
 aggressive = 3
@@ -23,5 +46,23 @@ multi_line_output = 3
 use_parentheses = false
 
 [tool.pyright]
-venvPath = "."
-venv = "env"
+
+[tool.pdm]
+
+[tool.pdm.dev-dependencies]
+test = [
+  "pytest",
+  "pytest-mock",
+  "pytest-cov",
+  "coverage",
+]
+quality = [
+  "autoflake",
+  "autopep8",
+  "black",
+  "flake8",
+  "isort",
+]
+
+[project.scripts]
+csv-utils = "csv_utils.__main__:entrypoint"

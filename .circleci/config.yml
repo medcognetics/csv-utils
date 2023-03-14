@@ -24,6 +24,12 @@ jobs:
             - image: cimg/python:3.10
         steps:
             - checkout
+            - run:
+                name: Install pdm
+                command: pip install --user pdm
+            - run:
+                name: Install dependencies
+                command: pdm install -G quality --no-default --no-self
             - run: 
                 name: Run quality tests
                 command: make quality
