@@ -114,6 +114,8 @@ class KeepWhere(Transform):
             )
 
     def _get_mask_for_column(self, table: pd.DataFrame, col: str, value: Any) -> Any:
+        if value is None or value is pd.NA:
+            return table[col].isna()
         value = str(value) if self.as_string else value
         column = table[col].astype(str) if self.as_string else table[col]
         return column == value if not self.contains else column.apply(lambda x: value in str(x))

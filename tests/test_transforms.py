@@ -64,6 +64,20 @@ def test_keep_where_contains(col, value, exp):
     assert bool(len(result)) == exp
 
 
+@pytest.mark.parametrize(
+    "col,value,exp",
+    [
+        pytest.param(None, None, True),
+        pytest.param(pd.NA, None, True),
+        pytest.param("foo", None, False),
+    ],
+)
+def test_keep_where_empty(col, value, exp):
+    df = pd.DataFrame({"colname": [col]})
+    result = KeepWhere("colname", value, allow_empty=True)(df)
+    assert bool(len(result)) == exp
+
+
 def test_keep_where_from_df(df_factory):
     df = df_factory()
     result = {KeepWhere.format_name(*k): v for k, v in KeepWhere.from_dataframe(df).items()}
@@ -102,6 +116,20 @@ def test_drop_where(df_factory, col, value, as_str, allow_empty, exp):
     df = df_factory()
     result = DropWhere(col, value, as_str, allow_empty)(df)
     assert len(result) == exp
+
+
+@pytest.mark.parametrize(
+    "col,value,exp",
+    [
+        pytest.param(None, None, False),
+        pytest.param(pd.NA, None, False),
+        pytest.param("foo", None, True),
+    ],
+)
+def test_drop_where_empty(col, value, exp):
+    df = pd.DataFrame({"colname": [col]})
+    result = DropWhere("colname", value, allow_empty=True)(df)
+    assert bool(len(result)) == exp
 
 
 @pytest.mark.parametrize("allow_missing", [True, pytest.param(False, marks=pytest.mark.xfail(raises=KeyError))])
