@@ -4,7 +4,6 @@ build-backend = "pdm.pep517.api"
 
 [project]
 name = "csv-utils"
-version = "0.1.0"
 description = ""
 requires-python = ">=3.8"
 authors = [
@@ -18,6 +17,7 @@ dependencies = [
 ]
 readme = "README.md"
 license = {text = "Apache"}
+dynamic = ["version"]
 
 [project.optional-dependencies]
 
@@ -48,6 +48,7 @@ use_parentheses = false
 [tool.pyright]
 
 [tool.pdm]
+version = { source = "scm" }
 
 [tool.pdm.dev-dependencies]
 test = [
