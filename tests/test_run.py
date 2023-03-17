@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from csv_utils import transform_csv
+from csv_utils import INPUT_REGISTRY, transform_csv
 
 
 @pytest.fixture
@@ -25,15 +25,23 @@ def setup_basic_test(tmp_path, df_factory):
     }
 
 
-def test_basic_run(setup_basic_test):
+@pytest.mark.parametrize("transform", ["noop", lambda x: x])
+@pytest.mark.parametrize(
+    "types",
+    [
+        ("stats-csv", "scores-csv"),
+        (INPUT_REGISTRY.get("stats-csv").fn, INPUT_REGISTRY.get("scores-csv").fn),
+    ],
+)
+def test_basic_run(setup_basic_test, transform, types):
     stats = setup_basic_test["stats"]
     scores = setup_basic_test["scores"]
     paths = [stats, scores]
-    input_names = ["stats-csv", "scores-csv"]
+    types = types
     aggregator_name = "join"
-    transform_names = ["noop"]
+    transform_names = [transform]
 
-    output = transform_csv(paths, input_names, aggregator_name, transform_names)
+    output = transform_csv(paths, types, aggregator_name, transform_names)
     assert list(output.columns) == [
         "Data Source Case ID",
         "Ground Truth",
