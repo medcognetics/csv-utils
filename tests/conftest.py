@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def df_factory():
     def func(
         columns: Iterable[str] = ["col1", "col2", "col3"], num_rows: int = 10, as_str: bool = False

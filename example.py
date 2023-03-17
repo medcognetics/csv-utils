@@ -33,6 +33,6 @@ TRANSFORM_REGISTRY(DropWhere(column="col1", value="N/A"), name="drop-col1-na")
 # Step 4 - Call transform_csv using any of the callables you just registered, or use the csv-utils CLI interface
 output_df = transform_csv(
     sources=[Path("file.csv")],
-    input_names=["my-input"],
-    transform_names=["filter-cols", "drop-col1-na"],
+    types=["my-input"],
+    transforms=["filter-cols", "drop-col1-na"],
 )
