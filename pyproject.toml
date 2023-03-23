@@ -13,7 +13,7 @@ dependencies = [
   "numpy",
   "pandas",
   "openpyxl",
-  "callable-registry @ git+https://github.com/TidalPaladin/callable-registry.git",
+  "registry @ git+https://github.com/TidalPaladin/callable-registry.git",
 ]
 readme = "README.md"
 license = {text = "Apache"}
