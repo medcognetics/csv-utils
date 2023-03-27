@@ -15,10 +15,6 @@ INPUT_REGISTRY = Registry("inputs", bound=Callable[..., pd.DataFrame])
 AGGREGATOR_REGISTRY = Registry("aggregators", bound=Callable[..., pd.DataFrame])
 
 INPUT_REGISTRY(lambda x: cast(pd.DataFrame, pd.read_csv(x)), name="csv")
-INPUT_REGISTRY(
-    lambda x: cast(pd.DataFrame, pd.read_csv(x, index_col="Study Path", dtype={"Data Source Case ID": str})),
-    name="stats-csv",
-)
 INPUT_REGISTRY(lambda x: x, name="noop")
 
 
