@@ -210,3 +210,25 @@ class KeepColumns(Transform):
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
         columns = [c for c in self.columns if c in table.columns]
         return table[columns]
+
+
+@dataclass
+class GroupValues(Transform):
+    r"""Group values in a particular column.
+
+    Args:
+        colname: The column to group.
+        sources: The values to group together.
+        dest: The value to replace the sources with.
+    """
+    colname: str
+    sources: Union[str, Sequence[str]]
+    dest: str
+
+    def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
+        if self.colname not in table.columns:
+            raise KeyError(f"column {self.colname} not in table.columns {table.columns}")
+        sources = [self.sources] if isinstance(self.sources, str) else self.sources
+        mask = table[self.colname].isin(sources)
+        table.loc[mask, self.colname] = self.dest
+        return table

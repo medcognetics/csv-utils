@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from csv_utils.transforms import Discretize, DropWhere, KeepColumns, KeepWhere, NoopTransform
+from csv_utils.transforms import Discretize, DropWhere, GroupValues, KeepColumns, KeepWhere, NoopTransform
 
 
 def test_noop_transform(df_factory):
@@ -164,3 +164,19 @@ def test_discretize(df_factory, col, interval, output_colname, exp):
     output_colname = output_colname or col
     target_col = df[output_colname]
     assert target_col.loc[0] == exp
+
+
+@pytest.mark.parametrize(
+    "col,values,dest,exp",
+    [
+        pytest.param("col1", [0, 1, 2], "grouped", 1),
+        pytest.param("col1", [0, 3, 6], "grouped", 3),
+        pytest.param("col1", [0, 3, 6], "foo", 3),
+        pytest.param("missing", [0, 3, 6], "foo", 3, marks=pytest.mark.xfail(raises=KeyError, strict=True)),
+        pytest.param("col1", [1, 4, 7], "foo", 0),
+    ],
+)
+def test_group_values(df_factory, col, values, dest, exp):
+    df = df_factory()
+    result = GroupValues(col, values, dest)(df)
+    assert (result[col] == dest).sum() == exp
