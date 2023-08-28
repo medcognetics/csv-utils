@@ -232,3 +232,28 @@ class GroupValues(Transform):
         mask = table[self.colname].isin(sources)
         table.loc[mask, self.colname] = self.dest
         return table
+
+
+@dataclass
+class RenameColumn(Transform):
+    old_name: str
+    new_name: str
+
+    def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
+        if self.old_name not in table.columns:
+            raise KeyError(f"column {self.old_name} not in table.columns {table.columns}")
+        table = table.rename(columns={self.old_name: self.new_name})
+        return table
+
+
+@dataclass
+class RenameValue(Transform):
+    column: str
+    old_value: Any
+    new_value: Any
+
+    def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
+        if self.column not in table.columns:
+            raise KeyError(f"column {self.column} not in table.columns {table.columns}")
+        table.loc[table[self.column] == self.old_value, self.column] = self.new_value
+        return table
