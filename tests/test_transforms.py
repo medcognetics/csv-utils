@@ -4,7 +4,16 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from csv_utils.transforms import Discretize, DropWhere, GroupValues, KeepColumns, KeepWhere, NoopTransform
+from csv_utils.transforms import (
+    Discretize,
+    DropWhere,
+    GroupValues,
+    KeepColumns,
+    KeepWhere,
+    NoopTransform,
+    RenameColumn,
+    RenameValue,
+)
 
 
 def test_noop_transform(df_factory):
@@ -180,3 +189,35 @@ def test_group_values(df_factory, col, values, dest, exp):
     df = df_factory()
     result = GroupValues(col, values, dest)(df)
     assert (result[col] == dest).sum() == exp
+
+
+@pytest.mark.parametrize(
+    "old_name,new_name,exp",
+    [
+        pytest.param("col1", "new_col1", ["new_col1", "col2", "col3"]),
+        pytest.param("col2", "new_col2", ["col1", "new_col2", "col3"]),
+        pytest.param("col3", "new_col3", ["col1", "col2", "new_col3"]),
+        pytest.param("not_present", "new_col", ["col1", "col2", "col3"], marks=pytest.mark.xfail(raises=KeyError)),
+    ],
+)
+def test_rename_column(df_factory, old_name, new_name, exp):
+    df = df_factory()
+    result = RenameColumn(old_name, new_name)(df)
+    assert list(result.columns) == exp
+
+
+@pytest.mark.parametrize(
+    "col,old_value,new_value,exp",
+    [
+        pytest.param("col1", 0, "zero", ["zero", 3, 6, 9, 12, 15, 18, 21, 24, 27]),
+        pytest.param("col1", 9, "nine", [0, 3, 6, "nine", 12, 15, 18, 21, 24, 27]),
+        pytest.param("col2", 1, "one", ["one", 4, 7, 10, 13, 16, 19, 22, 25, 28]),
+        pytest.param(
+            "not_present", 0, "zero", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], marks=pytest.mark.xfail(raises=KeyError)
+        ),
+    ],
+)
+def test_rename_value(df_factory, col, old_value, new_value, exp):
+    df = df_factory()
+    result = RenameValue(col, old_value, new_value)(df)
+    assert list(result[col]) == exp
