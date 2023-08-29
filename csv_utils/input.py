@@ -26,6 +26,13 @@ def get_patient(s: str) -> str:
     return Path(s).parents[1].name
 
 
+@INPUT_REGISTRY(name="df")
+def df_noop(df: pd.DataFrame) -> pd.DataFrame:
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"Expected `df` to be a DataFrame, found {type(df)}")
+    return df
+
+
 @INPUT_REGISTRY(name="stats-csv")
 def stats_csv(path: Path, stem: bool = False) -> pd.DataFrame:
     r"""Reads a pre-data-organizer stats tool CSV"""
