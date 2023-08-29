@@ -257,3 +257,21 @@ class RenameValue(Transform):
             raise KeyError(f"column {self.column} not in table.columns {table.columns}")
         table.loc[table[self.column] == self.old_value, self.column] = self.new_value
         return table
+
+
+@dataclass
+class RenameTable(Transform):
+    new_value: str
+
+    def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
+        table.name = self.new_value
+        return table
+
+
+@dataclass
+class RenameIndex(Transform):
+    new_value: str
+
+    def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
+        table.index.name = self.new_value
+        return table
