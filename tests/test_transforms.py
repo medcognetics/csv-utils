@@ -12,6 +12,9 @@ from csv_utils.transforms import (
     KeepWhere,
     NoopTransform,
     RenameColumn,
+    RenameColumns,
+    RenameIndex,
+    RenameTable,
     RenameValue,
 )
 
@@ -221,3 +224,45 @@ def test_rename_value(df_factory, col, old_value, new_value, exp):
     df = df_factory()
     result = RenameValue(col, old_value, new_value)(df)
     assert list(result[col]) == exp
+
+
+@pytest.mark.parametrize(
+    "new_value",
+    [
+        pytest.param("new_table_name"),
+        pytest.param("another_table_name"),
+    ],
+)
+def test_rename_table(df_factory, new_value):
+    df = df_factory()
+    df.name = "old_table_name"
+    result = RenameTable(new_value)(df)
+    assert result.name == new_value
+
+
+@pytest.mark.parametrize(
+    "new_value",
+    [
+        pytest.param("new_index_name"),
+        pytest.param("another_index_name"),
+    ],
+)
+def test_rename_index(df_factory, new_value):
+    df = df_factory()
+    df.index.name = "old_index_name"
+    result = RenameIndex(new_value)(df)
+    assert result.index.name == new_value
+
+
+@pytest.mark.parametrize(
+    "new_name",
+    [
+        pytest.param("new_columns_name"),
+        pytest.param("another_columns_name"),
+    ],
+)
+def test_rename_columns(df_factory, new_name):
+    df = df_factory()
+    df.columns.name = "old_columns_name"
+    result = RenameColumns(new_name)(df)
+    assert result.columns.name == new_name
