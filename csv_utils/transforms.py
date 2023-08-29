@@ -269,6 +269,15 @@ class RenameTable(Transform):
 
 
 @dataclass
+class RenameColumns(Transform):
+    new_name: str
+
+    def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
+        table.columns.name = self.new_name
+        return table
+
+
+@dataclass
 class RenameIndex(Transform):
     new_value: str
 

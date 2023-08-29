@@ -12,6 +12,7 @@ from csv_utils.transforms import (
     KeepWhere,
     NoopTransform,
     RenameColumn,
+    RenameColumns,
     RenameIndex,
     RenameTable,
     RenameValue,
@@ -251,3 +252,17 @@ def test_rename_index(df_factory, new_value, exp):
     df.index.name = "old_index_name"
     result = RenameIndex(new_value)(df)
     assert result.index.name == exp
+
+
+@pytest.mark.parametrize(
+    "new_name,exp",
+    [
+        pytest.param("new_columns_name", "new_columns_name"),
+        pytest.param("another_columns_name", "another_columns_name"),
+    ],
+)
+def test_rename_columns(df_factory, new_name, exp):
+    df = df_factory()
+    df.columns.name = "old_columns_name"
+    result = RenameColumns(new_name)(df)
+    assert result.columns.name == exp
