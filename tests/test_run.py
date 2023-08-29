@@ -50,3 +50,20 @@ def test_basic_run(setup_basic_test, transform, types):
     ]
     assert output.index.name == "Study Path"
     assert len(output) == 10
+
+
+def test_raw_df_passthrough(df_factory):
+    stats_df = df_factory(["Data Source Case ID", "Study Path", "Ground Truth"], as_str=True)
+    scores_df = df_factory(["Study", "cases", "score"], as_str=True)
+    stats_df.set_index("Data Source Case ID", inplace=True)
+    scores_df.set_index("Study", inplace=True)
+
+    output = transform_csv([stats_df, scores_df], ["df", "df"], aggregator_name="join")
+    assert list(output.columns) == [
+        "Study Path",
+        "Ground Truth",
+        "cases",
+        "score",
+    ]
+    assert output.index.name == "Data Source Case ID"
+    assert len(output) == 10

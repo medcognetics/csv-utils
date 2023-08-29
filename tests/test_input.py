@@ -5,7 +5,22 @@ from pathlib import Path
 
 import pandas as pd
 
-from csv_utils.input import concat, data_organizer_csv, join, join_or_concat, scores_csv, stats_csv, triage_csv
+from csv_utils.input import (
+    concat,
+    data_organizer_csv,
+    df_noop,
+    join,
+    join_or_concat,
+    scores_csv,
+    stats_csv,
+    triage_csv,
+)
+
+
+def test_df_noop(df_factory):
+    df = df_factory(columns=["col1", "col2"])
+    result = df_noop(df)
+    assert result.equals(df)
 
 
 def test_stats_csv(tmp_path, df_factory):
