@@ -10,16 +10,16 @@ authors = [
     {name = "Scott Chase Waggener", email = "tidalpaladin@protonmail.com"},
 ]
 dependencies = [
-  "numpy",
-  "pandas",
-  "openpyxl",
-  "registry @ git+https://github.com/TidalPaladin/callable-registry.git",
+    "numpy",
+    "pandas",
+    "openpyxl",
+    "registry @ git+https://github.com/TidalPaladin/callable-registry.git",
+    "jinja2>=3.1.2",
+    "tabulate>=0.9.0",
 ]
 readme = "README.md"
 license = {text = "Apache"}
 dynamic = ["version"]
-
-[project.optional-dependencies]
 
 [tool.autoflake]
 remove-all-unused-imports = true
@@ -44,8 +44,6 @@ line_length = 119
 lines_after_imports = 2
 multi_line_output = 3
 use_parentheses = false
-
-[tool.pyright]
 
 [tool.pdm]
 version = { source = "scm" }

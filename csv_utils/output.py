@@ -31,6 +31,13 @@ def to_excel(df: pd.DataFrame, path: Optional[Path], **kwargs) -> None:
     df.to_excel(path, **kwargs)
 
 
+@OUTPUT_REGISTRY(name="tex")
+def to_latex(df: pd.DataFrame, path: Optional[Path], **kwargs) -> None:
+    if path is None:
+        raise ValueError("path must be provided to `to_latex`")
+    df.to_latex(path, **kwargs)
+
+
 @OUTPUT_REGISTRY(name="pdb")
 def pdb(df: pd.DataFrame, path: Optional[Path]) -> None:
     import pdb
