@@ -339,10 +339,12 @@ def sanitize_latex(x: T, index: bool = False) -> T:
         The sanitized string or DataFrame.
     """
     if isinstance(x, str):
+        # Sanitize operators
         OPERATORS: Final = {"<=": "$\\leq$", ">=": "$\\geq$", "<": "$<$", ">": "$>$", "=": "$=$"}
         for op, latex in OPERATORS.items():
             x = x.replace(op, latex)
 
+        # Sanitize underscores to subscripts
         result = []
         for word in x.split(" "):
             if "_" in word:
