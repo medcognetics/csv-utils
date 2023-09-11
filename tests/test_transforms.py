@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from typing import Union
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -16,6 +18,7 @@ from csv_utils.transforms import (
     RenameIndex,
     RenameTable,
     RenameValue,
+    capitalize,
 )
 
 
@@ -266,3 +269,31 @@ def test_rename_columns(df_factory, new_name):
     df.columns.name = "old_columns_name"
     result = RenameColumns(new_name)(df)
     assert result.columns.name == new_name
+
+
+@pytest.mark.parametrize(
+    "input, index, expected_output",
+    [
+        ("hello world", False, "Hello World"),
+        ("HELLO WORLD", False, "HELLO WORLD"),
+        ("hello and world", False, "Hello and World"),
+        ("hello or world", False, "Hello or World"),
+        ("hello AND world", False, "Hello AND World"),
+        ("hello OR world", False, "Hello OR World"),
+        (
+            pd.DataFrame({"hello world": [1, 2], "HELLO WORLD": [3, 4]}),
+            False,
+            pd.DataFrame({"Hello World": [1, 2], "HELLO WORLD": [3, 4]}),
+        ),
+        (
+            pd.DataFrame({"hello world": [1, 2], "HELLO WORLD": [3, 4]}, index=["hello world", "HELLO WORLD"]),
+            True,
+            pd.DataFrame({"hello world": [1, 2], "HELLO WORLD": [3, 4]}, index=["Hello World", "HELLO WORLD"]),
+        ),
+    ],
+)
+def test_capitalize(input: Union[str, pd.DataFrame], index: bool, expected_output: Union[str, pd.DataFrame]):
+    if isinstance(input, pd.DataFrame):
+        assert capitalize(input, index=index).equals(expected_output)  # type: ignore
+    else:
+        assert capitalize(input) == expected_output

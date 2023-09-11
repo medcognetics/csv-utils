@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -44,7 +44,7 @@ class Discretize(Transform):
 
     def discretize(self, df: pd.DataFrame) -> pd.DataFrame:
         # get bin assignment for each item
-        col = pd.to_numeric(df[self.column], errors="coerce")
+        col = cast(pd.Series, pd.to_numeric(df[self.column], errors="coerce"))
         valid = ~col.isna()
         names = self._bins_to_index(self.intervals)
         name_dict = {i: v for i, v in enumerate(names)}
@@ -52,7 +52,7 @@ class Discretize(Transform):
 
         # map bin assignments to clean string names
         discretized = [name_dict.get(g, "NA") for g in groups]
-        df.loc[valid, self.output_column] = discretized
+        df.loc[cast(Any, valid), self.output_column] = discretized
         return df
 
     @classmethod
@@ -146,7 +146,7 @@ class KeepWhere(Transform):
         Returns:
             A dictionary mapping (column, value) pairs to KeepWhere transforms.
         """
-        columns = list(columns or df.columns)
+        columns = list(columns if columns else df.columns)
         result: Dict[Tuple[str, Any], KeepWhere] = {}
 
         if discretizers is not None:
@@ -284,3 +284,37 @@ class RenameIndex(Transform):
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
         table.index.name = self.new_value
         return table
+
+
+T = TypeVar("T", str, pd.DataFrame)
+
+
+@TRANSFORM_REGISTRY(name="capitalize")
+@TRANSFORM_REGISTRY(name="capitalize-index", index=True)
+def capitalize(x: T, index: bool = False) -> T:
+    """
+    This function takes a string and capitalizes the first letter of each word except for 'and' and 'or'.
+    If a word is already in uppercase, it is left unchanged. Can also be applied to DataFrames, in which
+    case it is applied to each column, or to the index, if `index` is True. DataFrame trasformation is
+    applied in-place.
+
+    Args:
+        x: The input string to be processed.
+        index: If True, the index of a DataFrame is processed instead of the columns.
+
+    Returns:
+        str: The processed string or DataFrame with capitalized words.
+    """
+    if isinstance(x, str):
+        return " ".join(
+            word.capitalize() if not word.isupper() and word not in ["and", "or"] else word for word in x.split(" ")
+        )
+    elif isinstance(x, pd.DataFrame):
+        x.columns
+        if index:
+            x.index = x.index.map(lambda i: capitalize(str(i)))
+        else:
+            x.columns = x.columns.map(lambda c: capitalize(str(c)))
+        return x
+    else:
+        raise TypeError(f"capitalize() expected str or DataFrame, got {type(x)}")
