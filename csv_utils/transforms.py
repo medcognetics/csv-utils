@@ -412,6 +412,9 @@ class Summarize:
         summary.fillna(0, inplace=True)
 
         # Flatten multi-col
-        summary.columns = [" ".join(col).strip() for col in summary.columns.values]
+        summary.columns = [
+            " ".join(str(c) for c in col).strip() if isinstance(col, tuple) else str(col)
+            for col in summary.columns.values
+        ]
 
         return summary
