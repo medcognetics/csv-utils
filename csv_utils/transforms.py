@@ -327,6 +327,7 @@ def sanitize_latex(x: T, index: bool = False) -> T:
 
     The following adjustments are made:
         * Replaces any comparison operators with their LaTeX equivalent. For example, "<=" becomes "$\\leq$".
+        * Escapes any "%" characters
         * Replaces any underscore-separated words with their LaTeX subscript equivalent. For example,
             "hello_world" becomes "hello\\textsubscript{world}". If a word contains multiple underscores,
             a warning is issued and the word is left unchanged.
@@ -340,7 +341,7 @@ def sanitize_latex(x: T, index: bool = False) -> T:
     """
     if isinstance(x, str):
         # Sanitize operators
-        OPERATORS: Final = {"<=": "$\\leq$", ">=": "$\\geq$", "<": "$<$", ">": "$>$", "=": "$=$"}
+        OPERATORS: Final = {"<=": "$\\leq$", ">=": "$\\geq$", "<": "$<$", ">": "$>$", "=": "$=$", "%": "$\\%$"}
         for op, latex in OPERATORS.items():
             x = x.replace(op, latex)
 
