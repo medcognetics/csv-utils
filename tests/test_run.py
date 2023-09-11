@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from csv_utils import INPUT_REGISTRY, transform_csv
+from csv_utils import INPUT_REGISTRY, TRANSFORM_REGISTRY, transform_csv
+from csv_utils.transforms import Summarize
 
 
 @pytest.fixture
@@ -67,3 +68,22 @@ def test_raw_df_passthrough(df_factory):
     ]
     assert output.index.name == "Data Source Case ID"
     assert len(output) == 10
+
+
+def test_summarize_latex(df_factory):
+    stats_df = df_factory(["Data Source Case ID", "Study Path", "Ground Truth"], as_str=True)
+    scores_df = df_factory(["Study", "cases", "score"], as_str=True)
+    stats_df.set_index("Data Source Case ID", inplace=True)
+    scores_df.set_index("Study", inplace=True)
+
+    TRANSFORM_REGISTRY(Summarize, name="summary", column="Ground Truth")  # type: ignore
+
+    output = transform_csv(
+        [stats_df, scores_df],
+        ["df", "df"],
+        aggregator_name="join",
+        transforms=["summary", "capitalize", "sanitize-latex", "sanitize-latex-index"],
+    )
+    assert "Overall $\\%$" in output.columns
+    assert output.index.name == "Ground Truth"
+    assert len(output) == 11

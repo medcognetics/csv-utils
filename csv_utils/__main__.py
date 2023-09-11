@@ -51,7 +51,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "-o",
         "--output",
-        default="print",
+        default="txt",
         choices=OUTPUT_REGISTRY.available_keys(),
         help="registered names of output handlers",
     )

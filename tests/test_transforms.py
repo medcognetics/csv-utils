@@ -18,6 +18,7 @@ from csv_utils.transforms import (
     RenameIndex,
     RenameTable,
     RenameValue,
+    Summarize,
     capitalize,
     sanitize_latex,
 )
@@ -338,7 +339,7 @@ class TestSanitizeLatex:
             ("<", False, "$<$"),
             (">", False, "$>$"),
             ("=", False, "$=$"),
-            ("%", False, "$\%$"),
+            ("%", False, "$\\%$"),
             (
                 pd.DataFrame({"<=": [1, 2], ">=": [3, 4]}),
                 False,
@@ -358,3 +359,25 @@ class TestSanitizeLatex:
             assert sanitize_latex(input, index=index).equals(expected_output)  # type: ignore
         else:
             assert sanitize_latex(input) == expected_output
+
+
+class TestSummarize:
+    @pytest.mark.parametrize(
+        "column,exp",
+        [
+            (
+                "col1",
+                pd.DataFrame(
+                    {
+                        "Overall Count": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 10.0],
+                        "Overall %": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 100.0],
+                        "col1": [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, "Total"],
+                    }
+                ).set_index("col1"),
+            ),
+        ],
+    )
+    def test_summarize(self, df_factory, column, exp):
+        df = df_factory()
+        result = Summarize(column)(df)
+        pd.testing.assert_frame_equal(result, exp)

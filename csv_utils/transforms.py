@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Final, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast
 
 import numpy as np
@@ -369,3 +369,52 @@ def sanitize_latex(x: T, index: bool = False) -> T:
         return x
     else:
         raise TypeError(f"sanitize_latex() expected str or DataFrame, got {type(x)}")
+
+
+@dataclass
+class Summarize:
+    r"""
+    Summarize a table across each column.
+
+    Args:
+        col: The column to summarize.
+        groupby: If provided, the summary will include an overall summary, plus summaries by
+            values in the columns provided here.
+
+    Raises:
+        * KeyError: If ``col`` is not in ``df``.
+        * KeyError: If ``groupby`` contains a column that is not in ``df``.
+    """
+    column: str
+    groupby: List[str] = field(default_factory=list)
+
+    def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+        if self.column not in df.columns:
+            raise KeyError(f"column {self.column} not in df.columns {df.columns}")
+        if any(col not in df.columns for col in self.groupby):
+            raise KeyError(f"One or more groupby columns not found in dataframe columns")
+
+        total = len(df)
+
+        def _create_cols(df: pd.DataFrame, col: str) -> pd.DataFrame:
+            result = df.value_counts(self.column)
+            result = result.sort_index(ascending=True).to_frame("Count")
+            result["%"] = result / total * 100
+            result.loc["Total"] = [result["Count"].sum(), 100.0]
+            return result
+
+        subtables = {"Overall": _create_cols(df, self.column)}
+        for group in self.groupby:
+            for category in df[group].unique():
+                keep = df[group] == category
+                subtables[category] = _create_cols(df[keep], self.column)
+        summary = pd.concat(subtables, axis=1)
+        summary.fillna(0, inplace=True)
+
+        # Flatten multi-col
+        summary.columns = [
+            " ".join(str(c) for c in col).strip() if isinstance(col, tuple) else str(col)
+            for col in summary.columns.values
+        ]
+
+        return summary
