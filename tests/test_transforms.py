@@ -19,6 +19,7 @@ from csv_utils.transforms import (
     RenameTable,
     RenameValue,
     capitalize,
+    sanitize_latex,
 )
 
 
@@ -297,3 +298,62 @@ def test_capitalize(input: Union[str, pd.DataFrame], index: bool, expected_outpu
         assert capitalize(input, index=index).equals(expected_output)  # type: ignore
     else:
         assert capitalize(input) == expected_output
+
+
+class TestSanitizeLatex:
+    @pytest.mark.parametrize(
+        "input, index, expected_output",
+        [
+            ("hello_world", False, "hello\\textsubscript{world}"),
+            ("HELLO_WORLD", False, "HELLO\\textsubscript{WORLD}"),
+            ("hello_and_world", False, "hello_and_world"),
+            (
+                pd.DataFrame({"hello_world": [1, 2], "HELLO_WORLD": [3, 4]}),
+                False,
+                pd.DataFrame({"hello\\textsubscript{world}": [1, 2], "HELLO\\textsubscript{WORLD}": [3, 4]}),
+            ),
+            (
+                pd.DataFrame({"hello_world": [1, 2], "HELLO_WORLD": [3, 4]}, index=["hello_world", "HELLO_WORLD"]),
+                True,
+                pd.DataFrame(
+                    {"hello_world": [1, 2], "HELLO_WORLD": [3, 4]},
+                    index=["hello\\textsubscript{world}", "HELLO\\textsubscript{WORLD}"],
+                ),
+            ),
+        ],
+    )
+    def test_sanitize_latex(
+        self, input: Union[str, pd.DataFrame], index: bool, expected_output: Union[str, pd.DataFrame]
+    ):
+        if isinstance(input, pd.DataFrame):
+            assert sanitize_latex(input, index=index).equals(expected_output)  # type: ignore
+        else:
+            assert sanitize_latex(input) == expected_output
+
+    @pytest.mark.parametrize(
+        "input, index, expected_output",
+        [
+            ("<=", False, "$\\leq$"),
+            (">=", False, "$\\geq$"),
+            ("<", False, "$<$"),
+            (">", False, "$>$"),
+            ("=", False, "$=$"),
+            (
+                pd.DataFrame({"<=": [1, 2], ">=": [3, 4]}),
+                False,
+                pd.DataFrame({"$\\leq$": [1, 2], "$\\geq$": [3, 4]}),
+            ),
+            (
+                pd.DataFrame({"<=": [1, 2], ">=": [3, 4]}, index=["<=", ">="]),
+                True,
+                pd.DataFrame({"<=": [1, 2], ">=": [3, 4]}, index=["$\\leq$", "$\\geq$"]),
+            ),
+        ],
+    )
+    def test_clean_operators(
+        self, input: Union[str, pd.DataFrame], index: bool, expected_output: Union[str, pd.DataFrame]
+    ):
+        if isinstance(input, pd.DataFrame):
+            assert sanitize_latex(input, index=index).equals(expected_output)  # type: ignore
+        else:
+            assert sanitize_latex(input) == expected_output

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast
+from typing import Any, Callable, Dict, Final, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast
 
 import numpy as np
 import pandas as pd
@@ -299,7 +299,7 @@ def capitalize(x: T, index: bool = False) -> T:
     applied in-place.
 
     Args:
-        x: The input string to be processed.
+        x: The input to be capitalized.
         index: If True, the index of a DataFrame is processed instead of the columns.
 
     Returns:
@@ -318,3 +318,51 @@ def capitalize(x: T, index: bool = False) -> T:
         return x
     else:
         raise TypeError(f"capitalize() expected str or DataFrame, got {type(x)}")
+
+
+@TRANSFORM_REGISTRY(name="sanitize-latex")
+@TRANSFORM_REGISTRY(name="sanitize-latex-index", index=True)
+def sanitize_latex(x: T, index: bool = False) -> T:
+    r"""Sanitize a string or DataFrame for use in LaTeX.
+
+    The following adjustments are made:
+        * Replaces any comparison operators with their LaTeX equivalent. For example, "<=" becomes "$\\leq$".
+        * Replaces any underscore-separated words with their LaTeX subscript equivalent. For example,
+            "hello_world" becomes "hello\\textsubscript{world}". If a word contains multiple underscores,
+            a warning is issued and the word is left unchanged.
+
+    Args:
+        x: The input to sanitize.
+        index: If True, the index of a DataFrame is processed instead of the columns.
+
+    Returns:
+        The sanitized string or DataFrame.
+    """
+    if isinstance(x, str):
+        OPERATORS: Final = {"<=": "$\\leq$", ">=": "$\\geq$", "<": "$<$", ">": "$>$", "=": "$=$"}
+        for op, latex in OPERATORS.items():
+            x = x.replace(op, latex)
+
+        result = []
+        for word in x.split(" "):
+            if "_" in word:
+                try:
+                    main, sub = word.split("_")
+                    word = f"{main}\\textsubscript{{{sub}}}"
+                except ValueError:
+                    # We don't support multiple subscripts in one word
+                    import warnings
+
+                    warnings.warn(f"Multiple subscripts in one word not supported: {word}. Skipping.")
+            result.append(word)
+        return cast(T, " ".join(result))
+
+    elif isinstance(x, pd.DataFrame):
+        x.columns
+        if index:
+            x.index = x.index.map(lambda i: sanitize_latex(str(i)))
+        else:
+            x.columns = x.columns.map(lambda c: sanitize_latex(str(c)))
+        return x
+    else:
+        raise TypeError(f"sanitize_latex() expected str or DataFrame, got {type(x)}")
