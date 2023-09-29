@@ -38,14 +38,14 @@ def df_noop(df: pd.DataFrame) -> pd.DataFrame:
 @INPUT_REGISTRY(name="series")
 def series_noop(inp: pd.Series) -> pd.Series:
     if not isinstance(inp, pd.Series):
-        raise TypeError(f"Expected `df` to be a Series, found {type(inp)}")
+        raise TypeError(f"Expected `inp` to be a Series, found {type(inp)}")
     return inp
 
 
 @INPUT_REGISTRY(name="df-or-series")
 def df_or_series(inp: T) -> T:
     if not isinstance(inp, (pd.Series, pd.DataFrame)):
-        raise TypeError(f"Expected `df` to be a DataFrame or Series, found {type(inp)}")
+        raise TypeError(f"Expected `inp` to be a DataFrame or Series, found {type(inp)}")
     return inp
 
 
