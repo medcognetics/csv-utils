@@ -9,9 +9,11 @@ from csv_utils.input import (
     concat,
     data_organizer_csv,
     df_noop,
+    df_or_series,
     join,
     join_or_concat,
     scores_csv,
+    series_noop,
     stats_csv,
     triage_csv,
 )
@@ -21,6 +23,21 @@ def test_df_noop(df_factory):
     df = df_factory(columns=["col1", "col2"])
     result = df_noop(df)
     assert result.equals(df)
+
+
+def test_series_noop(df_factory):
+    series = df_factory(columns=["col1", "col2"]).iloc[:, 0]
+    result = series_noop(series)
+    assert result.equals(series)
+
+
+def test_df_or_series(df_factory):
+    series = df_factory(columns=["col1", "col2"]).iloc[:, 0]
+    df = df_factory(columns=["col1", "col2"])
+    df_result = df_or_series(df)
+    series_result = df_or_series(series)
+    assert df_result.equals(df)
+    assert series_result.equals(series)
 
 
 def test_stats_csv(tmp_path, df_factory):

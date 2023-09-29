@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Sequence, Tuple, cast
+from typing import Any, Callable, Dict, List, Sequence, Tuple, TypeVar, cast
 
 import pandas as pd
 from registry import Registry
@@ -17,6 +17,8 @@ AGGREGATOR_REGISTRY = Registry("aggregators", bound=Callable[..., pd.DataFrame])
 INPUT_REGISTRY(lambda x: cast(pd.DataFrame, pd.read_csv(x)), name="csv")
 INPUT_REGISTRY(lambda x: x, name="noop")
 
+T = TypeVar("T", pd.DataFrame, pd.Series)
+
 
 def get_study(s: str) -> str:
     return Path(s).parent.name
@@ -31,6 +33,20 @@ def df_noop(df: pd.DataFrame) -> pd.DataFrame:
     if not isinstance(df, pd.DataFrame):
         raise TypeError(f"Expected `df` to be a DataFrame, found {type(df)}")
     return df
+
+
+@INPUT_REGISTRY(name="series")
+def series_noop(inp: pd.Series) -> pd.Series:
+    if not isinstance(inp, pd.Series):
+        raise TypeError(f"Expected `df` to be a Series, found {type(inp)}")
+    return inp
+
+
+@INPUT_REGISTRY(name="df-or-series")
+def df_or_series(inp: T) -> T:
+    if not isinstance(inp, (pd.Series, pd.DataFrame)):
+        raise TypeError(f"Expected `df` to be a DataFrame or Series, found {type(inp)}")
+    return inp
 
 
 @INPUT_REGISTRY(name="stats-csv")
