@@ -84,11 +84,14 @@ def inference_csv(path: Path) -> pd.DataFrame:
 
 
 @AGGREGATOR_REGISTRY(name="join")
+@AGGREGATOR_REGISTRY(name="join-left", how="left")
+@AGGREGATOR_REGISTRY(name="join-inner", how="inner")
+@AGGREGATOR_REGISTRY(name="join-outer", how="outer")
 def join(dataframes: Sequence[pd.DataFrame], **kwargs) -> pd.DataFrame:
     if len(dataframes) < 2:
         raise ValueError(f"Expected `len(dataframes)` >= 2, found {len(dataframes)}")
-    df1 = next(iter(dataframes))
-    return df1.join(list(dataframes[1:]), **kwargs)
+    first_dataframe, *remaining_dataframes = list(dataframes)
+    return first_dataframe.join(remaining_dataframes, **kwargs)
 
 
 @AGGREGATOR_REGISTRY(name="concat")

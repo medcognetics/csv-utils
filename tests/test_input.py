@@ -4,6 +4,7 @@
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from csv_utils.input import (
     concat,
@@ -66,11 +67,12 @@ def test_triage_csv(tmp_path, df_factory):
     assert len(result) == len(df)
 
 
-def test_join(df_factory):
+@pytest.mark.parametrize("how", ["inner", "outer", "left"])
+def test_join(df_factory, how):
     df1 = df_factory().loc[:, ("col1",)]
     df2 = df_factory().loc[:, ("col2",)]
     df3 = df_factory().loc[:, ("col3",)]
-    df = join([df1, df2, df3])
+    df = join([df1, df2, df3], how=how)
     assert df.shape == (df1.shape[0], df1.shape[1] + df2.shape[1] + df3.shape[1])
 
 
