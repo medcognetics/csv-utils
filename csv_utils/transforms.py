@@ -248,14 +248,30 @@ class RenameColumn(Transform):
 
 @dataclass
 class RenameValue(Transform):
+    """
+    Renames a specific value in a given column of a DataFrame.
+    It takes a DataFrame as input and returns a DataFrame with the specified value renamed.
+
+    Args:
+        column: The column in which the value to be renamed is located.
+        old_value: The value to be renamed.
+        new_value: The new name for the value.
+        as_string: If True, compare values as strings.
+    """
+
     column: str
     old_value: Any
     new_value: Any
+    as_string: bool = False
 
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
         if self.column not in table.columns:
             raise KeyError(f"column {self.column} not in table.columns {table.columns}")
-        table.loc[table[self.column] == self.old_value, self.column] = self.new_value
+        if self.as_string:
+            mask = table[self.column].astype(str) == str(self.old_value)
+        else:
+            mask = table[self.column] == self.old_value
+        table.loc[mask, self.column] = self.new_value
         return table
 
 
