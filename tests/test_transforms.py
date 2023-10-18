@@ -215,19 +215,27 @@ def test_rename_column(df_factory, old_name, new_name, exp):
 
 
 @pytest.mark.parametrize(
-    "col,old_value,new_value,exp",
+    "as_string,col,old_value,new_value,exp",
     [
-        pytest.param("col1", 0, "zero", ["zero", 3, 6, 9, 12, 15, 18, 21, 24, 27]),
-        pytest.param("col1", 9, "nine", [0, 3, 6, "nine", 12, 15, 18, 21, 24, 27]),
-        pytest.param("col2", 1, "one", ["one", 4, 7, 10, 13, 16, 19, 22, 25, 28]),
+        pytest.param(False, "col1", 0, "zero", ["zero", 3, 6, 9, 12, 15, 18, 21, 24, 27]),
+        pytest.param(False, "col1", 9, "nine", [0, 3, 6, "nine", 12, 15, 18, 21, 24, 27]),
+        pytest.param(False, "col2", 1, "one", ["one", 4, 7, 10, 13, 16, 19, 22, 25, 28]),
         pytest.param(
-            "not_present", 0, "zero", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], marks=pytest.mark.xfail(raises=KeyError)
+            False,
+            "not_present",
+            0,
+            "zero",
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            marks=pytest.mark.xfail(raises=KeyError),
         ),
+        pytest.param(False, "col2", "1", "one", [1, 4, 7, 10, 13, 16, 19, 22, 25, 28]),
+        pytest.param(True, "col2", "1", "one", ["one", 4, 7, 10, 13, 16, 19, 22, 25, 28]),
+        pytest.param(True, "col2", 1, "one", ["one", 4, 7, 10, 13, 16, 19, 22, 25, 28]),
     ],
 )
-def test_rename_value(df_factory, col, old_value, new_value, exp):
+def test_rename_value(df_factory, as_string, col, old_value, new_value, exp):
     df = df_factory()
-    result = RenameValue(col, old_value, new_value)(df)
+    result = RenameValue(col, old_value, new_value, as_string)(df)
     assert list(result[col]) == exp
 
 
