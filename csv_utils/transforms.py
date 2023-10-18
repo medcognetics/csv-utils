@@ -268,7 +268,6 @@ class RenameValue(Transform):
         if self.column not in table.columns:
             raise KeyError(f"column {self.column} not in table.columns {table.columns}")
         if self.as_string:
-            str(self.old_value)
             mask = table[self.column].astype(str) == str(self.old_value)
         else:
             mask = table[self.column] == self.old_value
