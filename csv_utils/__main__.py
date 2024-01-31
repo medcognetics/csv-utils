@@ -4,6 +4,8 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from jsonargparse import ActionConfigFile, ArgumentParser, Namespace
+
 from .input import AGGREGATOR_REGISTRY, INPUT_REGISTRY
 from .output import OUTPUT_REGISTRY
 from .run import transform_csv
@@ -23,8 +25,9 @@ def main(args: Namespace) -> None:
 
 def parse_args() -> Namespace:
     parser = ArgumentParser(prog="csv-utils")
+    parser.add_argument("--config", action=ActionConfigFile)
     parser.add_argument("tables", nargs="+", type=Path, help="paths to files with table of entries")
-    parser.add_argument("-d", "--dest", type=Path, default=None, help="destination for ouptuts")
+    parser.add_argument("-d", "--dest", type=Path, default=None, help="destination for outputs")
     parser.add_argument(
         "-i",
         "--inputs",
@@ -51,7 +54,7 @@ def parse_args() -> Namespace:
     parser.add_argument(
         "-o",
         "--output",
-        default="txt",
+        default="print",
         choices=OUTPUT_REGISTRY.available_keys(),
         help="registered names of output handlers",
     )
