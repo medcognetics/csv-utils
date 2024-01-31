@@ -43,6 +43,9 @@ class Summarize(Transform):
         # Build table
         result = pd.concat(column_summaries.values(), axis=1)
 
+        new_index = pd.MultiIndex.from_product(result.index.levels)
+        result = result.reindex(new_index, fill_value=0)
+
         # Add total
         if self.total is not None:
             total_index = [self.total] if isinstance(self.total, str) else list(self.total)
