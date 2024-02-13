@@ -539,7 +539,6 @@ def sort(values: Sequence[Any], ascending: bool = True, numeric_first: bool = Tr
         return result
 
     # The sort keys may be a mixture of float and str, so we need to compare them separately
-    start_len = len(values)
     sort_keys = {assign_sort_key(k): k for k in values}
     float_values = [key for key in sort_keys.keys() if isinstance(key, float)]
     str_values = [key for key in sort_keys.keys() if isinstance(key, str)]
@@ -548,7 +547,7 @@ def sort(values: Sequence[Any], ascending: bool = True, numeric_first: bool = Tr
     )
 
     sorted_values = [sort_keys[key] for key in sorted_keys]
-    assert len(sorted_values) == start_len, f"Expected {start_len} values, got {len(sorted_values)}"
+    assert len(sorted_values) == len(values), f"Expected {len(values)} values, got {len(sorted_values)}"
     return sorted_values if ascending else sorted_values[::-1]
 
 
