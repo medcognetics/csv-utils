@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import partial
 from typing import List, Sequence
 
 import pandas as pd
@@ -7,8 +8,8 @@ from .transforms import Transform
 
 
 @dataclass
-class Summarize(Transform):
-    r"""Transform to summarize counts of values in a table.
+class PivotTableCounts(Transform):
+    r"""Transform to summarize counts of values in a table using a pivot table.
 
     Args:
         index: The column(s) to use as the row index in the summary.
@@ -31,17 +32,16 @@ class Summarize(Transform):
             else [c for c in table.columns if c not in index]
         )
 
-        # Summarize each column individually
-        column_summaries = {
-            colname: table.groupby(index)[colname].value_counts().unstack().fillna(0).astype(int) for colname in columns
+        # Create pivot table
+        column_values = {col: sorted(table[col].unique()) for col in columns}
+        agg_funcs = {
+            # NOTE: partial lambda needed to capture the value of `v` at the time of the loop
+            col: [partial(lambda x, y: (x == y).sum(), y=v) for v in values]
+            for col, values in column_values.items()
         }
-
-        # Add column axis name as a top level in the column multi-index
-        for colname, summary in column_summaries.items():
-            summary.columns = pd.MultiIndex.from_product([[colname], summary.columns])
-
-        # Build table
-        result = pd.concat(column_summaries.values(), axis=1)
+        agg_func_names = [(col, value) for col, values in column_values.items() for value in values]
+        result = pd.pivot_table(table, index=index, values=columns, aggfunc=agg_funcs, fill_value=0)
+        result.columns = pd.MultiIndex.from_tuples(agg_func_names)
 
         # Fill in missing index levels
         if isinstance(result.index, pd.MultiIndex):

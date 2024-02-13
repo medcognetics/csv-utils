@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from csv_utils.summary import Summarize
+from csv_utils.summary import PivotTableCounts
 
 
 @pytest.mark.parametrize(
@@ -79,5 +79,5 @@ from csv_utils.summary import Summarize
 )
 def test_summarize(df_factory, index, columns, total, exp):
     df = df_factory().apply(lambda x: x % 2 == 0)
-    result = Summarize(index=index, columns=columns, total=total)(df)
+    result = PivotTableCounts(index=index, columns=columns, total=total)(df)
     pd.testing.assert_frame_equal(result, exp, check_names=False)
