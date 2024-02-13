@@ -27,6 +27,19 @@ class NoopTransform(Transform):
 TRANSFORM_REGISTRY(NoopTransform(), name="noop")
 
 
+I = TypeVar("I")
+
+
+def to_list(x: I | Iterable[I]) -> List[I]:
+    match x:
+        case str():
+            return [cast(I, x)]
+        case _ if isinstance(x, Iterable):
+            return list(x)
+        case _:
+            return [cast(I, x)]
+
+
 @dataclass
 class Discretize(Transform):
     column: str
@@ -237,42 +250,88 @@ class GroupValues(Transform):
 
 @dataclass
 class RenameColumn(Transform):
-    old_name: str
-    new_name: str
+    """
+    Rename one or more columns in a DataFrame.
+
+    This transform allows for renaming one or multiple columns in a given DataFrame. If `copy` is set to True,
+    the original columns are retained alongside the new ones with updated names. Otherwise, the original columns
+    are replaced by the new names.
+
+    Attributes:
+        old_name: A string or a list of strings representing the original column names. If None, all columns are considered.
+        new_name: A string or a list of strings representing the new column names.
+        copy: A boolean indicating whether to copy the original column(s) or replace them. Defaults to False.
+
+    Raises:
+        KeyError: If any of the `old_name` columns do not exist in the DataFrame.
+        ValueError: If the length of `old_name` and `new_name` are not the same.
+    """
+
+    old_name: str | Sequence[str] | None
+    new_name: str | Sequence[str]
+    copy: bool = False
+
+    def __post_init__(self):
+        self.old_name = to_list(self.old_name) if self.old_name is not None else None
+        self.new_name = to_list(self.new_name)
 
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
-        if self.old_name not in table.columns:
-            raise KeyError(f"column {self.old_name} not in table.columns {table.columns}")
-        table = table.rename(columns={self.old_name: self.new_name})
+        # Validate inputs
+        old_name = self.old_name if self.old_name is not None else list(table.columns)
+        new_name = self.new_name
+        assert isinstance(old_name, list) and isinstance(new_name, list)
+        if len(old_name) != len(new_name):
+            raise ValueError(f"old_name and new_name must have the same length")
+        for val in old_name:
+            if val not in table.columns:
+                raise KeyError(f"column {self.old_name} not in table.columns {table.columns}")
+
+        # Rename columns
+        if self.copy:
+            for old, new in zip(old_name, new_name):
+                table[new] = table[old]
+        else:
+            table = table.rename(columns={old: new for old, new in zip(old_name, new_name)})
         return table
 
 
 @dataclass
 class RenameValue(Transform):
     """
-    Renames a specific value in a given column of a DataFrame.
-    It takes a DataFrame as input and returns a DataFrame with the specified value renamed.
+    Renames a value or values in a given column of a DataFrame.
 
     Args:
-        column: The column in which the value to be renamed is located.
-        old_value: The value to be renamed.
-        new_value: The new name for the value.
+        column: The column on which to perform the value renaming.
+        mapping: A dictionary containing the old value(s) as keys and the new value(s) as values.
         as_string: If True, compare values as strings.
+        output_column: The name of the column to store the result. If None, the original column is updated in place.
     """
 
     column: str
-    old_value: Any
-    new_value: Any
+    mapping: Dict[Any, Any]
+    default: Any | None = None
     as_string: bool = False
+    output_column: str | None = None
+
+    def __post_init__(self):
+        if not self.mapping:
+            raise ValueError("mapping cannot be empty")
 
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
+        # Validate inputs
         if self.column not in table.columns:
             raise KeyError(f"column {self.column} not in table.columns {table.columns}")
+
+        mapping = self.mapping
         if self.as_string:
-            mask = table[self.column].astype(str) == str(self.old_value)
-        else:
-            mask = table[self.column] == self.old_value
-        table.loc[mask, self.column] = self.new_value
+            mapping = {str(k): v for k, v in mapping.items()}
+
+        def _rename_value(value: Any) -> Any:
+            default = self.default if self.default is not None else value
+            return mapping.get(str(value) if self.as_string else value, default)
+
+        output_column = self.output_column if self.output_column is not None else self.column
+        table.loc[:, output_column] = table.loc[:, self.column].apply(_rename_value)
         return table
 
 
@@ -285,6 +344,8 @@ class RenameTable(Transform):
         return table
 
 
+# TODO: We should probably have a single RenameAxis transform that can rename both columns and index.
+# Having RenameColumn and RenameColumns is a bit confusing.
 @dataclass
 class RenameColumns(Transform):
     new_name: str
