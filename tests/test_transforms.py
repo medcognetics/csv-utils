@@ -21,6 +21,8 @@ from csv_utils.transforms import (
     Summarize,
     capitalize,
     sanitize_latex,
+    sort,
+    sort_columns,
     to_list,
 )
 
@@ -408,3 +410,59 @@ class TestSummarize:
         df = df_factory()
         result = Summarize(column)(df)
         pd.testing.assert_frame_equal(result, exp)
+
+
+@pytest.mark.parametrize(
+    "vals,exp",
+    [
+        pytest.param(["b", "a"], ["a", "b"]),
+        pytest.param(["1", "2"], ["1", "2"]),
+        pytest.param(["2", "1"], ["1", "2"]),
+        pytest.param(
+            ["10.0 <= x < 11.0", ">= 11.0", "< 5.0"],
+            ["< 5.0", "10.0 <= x < 11.0", ">= 11.0"],
+        ),
+        pytest.param(
+            ["10.0 <= x < 10.5", ">= 11.0", "< 5.0", "10.5 <= x < 11.0"],
+            ["< 5.0", "10.0 <= x < 10.5", "10.5 <= x < 11.0", ">= 11.0"],
+        ),
+        pytest.param(
+            ["10.0 - 10.5", ">= 11.0", "< 5.0", "10.5-11.0"],
+            ["< 5.0", "10.0 - 10.5", "10.5-11.0", ">= 11.0"],
+        ),
+        pytest.param(
+            ["2", "1", "unknown"],
+            ["1", "2", "unknown"],
+        ),
+        pytest.param(
+            ["jun2022", "jul2021", "aug2020"],
+            ["aug2020", "jul2021", "jun2022"],
+        ),
+        pytest.param(
+            ["source1_jun2022", "source2_jul2021", "source3_aug2020"],
+            ["source1_jun2022", "source2_jul2021", "source3_aug2020"],
+        ),
+        pytest.param(
+            ["jun2022", "jul2021", "aug2020", "b_unknown"],
+            # Unknown values should be sorted to the end just like in the numeric case
+            ["aug2020", "jul2021", "jun2022", "b_unknown"],
+        ),
+        pytest.param(
+            ["10 <= x < 15", "< 10", ">= 15"],
+            ["< 10", "10 <= x < 15", ">= 15"],
+        ),
+        pytest.param(
+            ["2020", "2022", "2021"],
+            ["2020", "2021", "2022"],
+        ),
+    ],
+)
+def test_sort(vals, exp):
+    sorted_vals = sort(vals)
+    assert sorted_vals == exp
+
+
+def test_sort_columns():
+    df = pd.DataFrame({"b": [1, 2], "a": [3, 4]})
+    output = sort_columns(df)
+    assert output.columns.tolist() == ["a", "b"]
