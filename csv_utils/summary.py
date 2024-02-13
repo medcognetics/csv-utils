@@ -8,7 +8,7 @@ from .transforms import Transform
 
 @dataclass
 class Summarize(Transform):
-    r"""Transform to summarize counts of values a table.
+    r"""Transform to summarize counts of values in a table.
 
     Args:
         index: The column(s) to use as the row index in the summary.
