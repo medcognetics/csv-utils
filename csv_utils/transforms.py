@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import re
 import sys
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Final, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast
@@ -435,8 +436,6 @@ def sanitize_latex(x: T, index: bool = False) -> T:
                     word = f"{main}\\textsubscript{{{sub}}}"
                 except ValueError:
                     # We don't support multiple subscripts in one word
-                    import warnings
-
                     warnings.warn(f"Multiple subscripts in one word not supported: {word}. Skipping.")
             result.append(word)
         return cast(T, " ".join(result))
@@ -470,6 +469,11 @@ class Summarize:
     groupby: List[str] = field(default_factory=list)
 
     def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+        warnings.warn(
+            "This transform is deprecated and will be removed in a future release. "
+            "See `csv_utils.summary.Summarize instead.",
+            DeprecationWarning,
+        )
         if self.column not in df.columns:
             raise KeyError(f"column {self.column} not in df.columns {df.columns}")
         if any(col not in df.columns for col in self.groupby):
