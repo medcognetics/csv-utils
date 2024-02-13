@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from functools import partial
-from typing import List, Sequence
+from typing import Any, Callable, Dict, List, Sequence, cast
 
 import pandas as pd
 
@@ -34,13 +34,13 @@ class PivotTableCounts(Transform):
 
         # Create pivot table
         column_values = {col: sorted(table[col].unique()) for col in columns}
-        agg_funcs = {
+        agg_funcs: Dict[str, List[Callable]] = {
             # NOTE: partial lambda needed to capture the value of `v` at the time of the loop
             col: [partial(lambda x, y: (x == y).sum(), y=v) for v in values]
             for col, values in column_values.items()
         }
         agg_func_names = [(col, value) for col, values in column_values.items() for value in values]
-        result = pd.pivot_table(table, index=index, values=columns, aggfunc=agg_funcs, fill_value=0)
+        result = pd.pivot_table(table, index=index, values=columns, aggfunc=cast(Any, agg_funcs), fill_value=0)
         result.columns = pd.MultiIndex.from_tuples(agg_func_names)
 
         # Fill in missing index levels
