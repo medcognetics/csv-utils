@@ -435,12 +435,25 @@ class TestSummarize:
             ["1", "2", "unknown"],
         ),
         pytest.param(
-            ["jun2020", "jul2020", "aug2021"],
-            ["aug2021", "jul2020", "jun2020"],
+            ["jun2022", "jul2021", "aug2020"],
+            ["aug2020", "jul2021", "jun2022"],
+        ),
+        pytest.param(
+            ["source1_jun2022", "source2_jul2021", "source3_aug2020"],
+            ["source1_jun2022", "source2_jul2021", "source3_aug2020"],
+        ),
+        pytest.param(
+            ["jun2022", "jul2021", "aug2020", "b_unknown"],
+            # Unknown values should be sorted to the end just like in the numeric case
+            ["aug2020", "jul2021", "jun2022", "b_unknown"],
         ),
         pytest.param(
             ["10 <= x < 15", "< 10", ">= 15"],
             ["< 10", "10 <= x < 15", ">= 15"],
+        ),
+        pytest.param(
+            ["2020", "2022", "2021"],
+            ["2020", "2021", "2022"],
         ),
     ],
 )

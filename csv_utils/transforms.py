@@ -501,13 +501,20 @@ class Summarize:
         return summary
 
 
-def sort(values: Sequence[Any], ascending: bool = True, numeric_first: bool = True) -> List[Any]:
+def sort(
+    values: Sequence[Any],
+    ascending: bool = True,
+    numeric_first: bool = True,
+    parse_dates: bool = True,
+    **kwargs,
+) -> List[Any]:
     r"""
     Sorts a sequence of values.
 
     This function is robust to intervals with comparison operators.
     It uses a regular expression to extract the first numeric value (if any) from each key and
-    sorts the keys based on these values. Non-numeric keys are sorted lexicographically.
+    sorts the keys based on these values. Non-numeric keys are sorted lexicographically. If all
+    inputs are dates they are parsed and sorted as dates.
 
     .. note::
         It is assumed that intervals always have the smaller value first.
@@ -517,12 +524,21 @@ def sort(values: Sequence[Any], ascending: bool = True, numeric_first: bool = Tr
         values: The values to sort.
         ascending: If True, sort in ascending order. Otherwise, sort in descending order.
         numeric_first: If True, sort numeric values before strings. Otherwise, sort strings before numeric values.
+        parse_dates: If True, attempt to interpret the values as dates and sort them accordingly.
+
+    Keyword Args:
+        Forwarded to :func:`pandas.to_datetime` for date parsing.
 
     Returns:
         The sorted values
     """
 
     def assign_sort_key(val: str) -> float | str:
+        # If requested, first try to parse the value as a date.
+        # When parsed we convert to a timestamp so the return value is still a float
+        if parse_dates and (parsed_date := pd.to_datetime(val, errors="coerce", **kwargs)) is not pd.NaT:
+            return cast(pd.Timestamp, parsed_date).timestamp()
+
         # We don't want things like source_monthyy to be sorted as floats by year.
         # Instead we will consider them strs, though this doesn't give a good year sorting
         if _ALPHABETICAL_RE.search(val):
