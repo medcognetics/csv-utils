@@ -16,6 +16,7 @@ dependencies = [
     "registry @ git+https://github.com/TidalPaladin/callable-registry.git",
     "jinja2>=3.1.2",
     "tabulate>=0.9.0",
+    "jsonargparse>=4.27.3",
 ]
 readme = "README.md"
 license = {text = "Apache"}
@@ -34,7 +35,7 @@ aggressive = 3
 
 [tool.black]
 line-length = 120
-target-version = ['py37']
+target-version = ['py310']
 
 [tool.isort]
 ensure_newline_before_comments = true

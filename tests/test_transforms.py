@@ -23,7 +23,20 @@ from csv_utils.transforms import (
     sanitize_latex,
     sort,
     sort_columns,
+    to_list,
 )
+
+
+@pytest.mark.parametrize(
+    "inp,exp",
+    [
+        ("x", ["x"]),
+        (["x", "y"], ["x", "y"]),
+        (("x", "y"), ["x", "y"]),
+    ],
+)
+def test_to_list(inp, exp):
+    assert to_list(inp) == exp
 
 
 def test_noop_transform(df_factory):
@@ -201,6 +214,7 @@ def test_group_values(df_factory, col, values, dest, exp):
     assert (result[col] == dest).sum() == exp
 
 
+@pytest.mark.parametrize("copy", [False, True])
 @pytest.mark.parametrize(
     "old_name,new_name,exp",
     [
@@ -210,10 +224,14 @@ def test_group_values(df_factory, col, values, dest, exp):
         pytest.param("not_present", "new_col", ["col1", "col2", "col3"], marks=pytest.mark.xfail(raises=KeyError)),
     ],
 )
-def test_rename_column(df_factory, old_name, new_name, exp):
+def test_rename_column(df_factory, old_name, new_name, copy, exp):
     df = df_factory()
-    result = RenameColumn(old_name, new_name)(df)
-    assert list(result.columns) == exp
+    result = RenameColumn(old_name, new_name, copy=copy)(df)
+    if copy:
+        assert set(result.columns).issuperset(exp)
+        assert old_name in df.columns
+    else:
+        assert list(result.columns) == exp
 
 
 @pytest.mark.parametrize(
@@ -237,7 +255,8 @@ def test_rename_column(df_factory, old_name, new_name, exp):
 )
 def test_rename_value(df_factory, as_string, col, old_value, new_value, exp):
     df = df_factory()
-    result = RenameValue(col, old_value, new_value, as_string)(df)
+    mapping = {old_value: new_value}
+    result = RenameValue(col, mapping, as_string=as_string)(df)
     assert list(result[col]) == exp
 
 
