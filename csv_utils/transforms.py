@@ -522,7 +522,7 @@ def sort(values: Sequence[Any], ascending: bool = True, numeric_first: bool = Tr
         The sorted values
     """
 
-    def sort_key(val: str) -> float | str:
+    def assign_sort_key(val: str) -> float | str:
         # We don't want things like source_monthyy to be sorted as floats by year.
         # Instead we will consider them strs, though this doesn't give a good year sorting
         if _ALPHABETICAL_RE.search(val):
@@ -540,7 +540,7 @@ def sort(values: Sequence[Any], ascending: bool = True, numeric_first: bool = Tr
 
     # The sort keys may be a mixture of float and str, so we need to compare them separately
     start_len = len(values)
-    sort_keys = {sort_key(k): k for k in values}
+    sort_keys = {assign_sort_key(k): k for k in values}
     float_values = [key for key in sort_keys.keys() if isinstance(key, float)]
     str_values = [key for key in sort_keys.keys() if isinstance(key, str)]
     sorted_keys = (
