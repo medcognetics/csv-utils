@@ -573,8 +573,7 @@ def sort(
         return result
 
     # The sort keys may be a mixture of float and str, so we need to compare them separately
-    foo = {k: assign_sort_key(k) for k in values}
-    sort_keys = {v: k for k, v in foo.items()}
+    sort_keys = {assign_sort_key(k): k for k in values}
     float_values = [key for key in sort_keys.keys() if isinstance(key, float)]
     str_values = [key for key in sort_keys.keys() if isinstance(key, str)]
     sorted_keys = (
