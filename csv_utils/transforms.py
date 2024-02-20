@@ -12,8 +12,10 @@ import pandas as pd
 from registry import Registry
 
 
-_ALPHABETICAL_RE = re.compile(r"^[a-zA-Z]")
-_DIGIT_RE = re.compile(r"(\d+(\.\d+)?)")
+_ALPHABETICAL_RE: Final = re.compile(r"^[a-zA-Z]")
+_DIGIT_RE: Final = re.compile(r"(\d+(\.\d+)?)")
+_DIGIT_ALPHABETICAL_RE: Final = re.compile(r"(?P<digit>\d+(\.\d+)?)(?P<alphabetical>[a-zA-Z]+)")
+
 TRANSFORM_REGISTRY = Registry("transforms", bound=Callable[..., pd.DataFrame])
 
 
@@ -553,11 +555,23 @@ def sort(
         # Instead we will consider them strs, though this doesn't give a good year sorting
         if _ALPHABETICAL_RE.search(val):
             return val
-        match = _DIGIT_RE.search(val)
-        result = float(match.group()) if match else val
+
+        # Try to handle numeric values suffixed with alphabetical characters, e.g. 5a, 5b, 5c
+        # To do this we will split the string into a digit and an alphabetical part. Both parts will be converted
+        # to floats and combined into a single float. This will allow us to sort the values in the correct order.
+        # This isn't perfect, but it lets us avoid a lot of custom sub-sorting logic.
+        # If a more robust solution is later needed, consider recursive sub-sort calls.
+        if re_match := _DIGIT_ALPHABETICAL_RE.search(val):
+            digit = re_match.group("digit")
+            ord_sum = sum(ord(letter) for letter in re_match.group("alphabetical"))
+            BIG_DIVISOR: Final = 2**32
+            return float(digit) + ord_sum / BIG_DIVISOR
+
+        re_match = _DIGIT_RE.search(val)
+        result = float(re_match.group()) if re_match else val
 
         # We need to handle one-sided intervals, e.g. < 5.0 and 5.0 <= x < 10.0 in the same value set
-        if match:
+        if re_match:
             if val.startswith("<"):
                 result = sys.float_info.min
             elif val.startswith(">"):
