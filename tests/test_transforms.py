@@ -455,6 +455,10 @@ class TestSummarize:
             ["2020", "2022", "2021"],
             ["2020", "2021", "2022"],
         ),
+        pytest.param(
+            ["1", "4", "3", "unknown", "4b", "4a", "0"],
+            ["0", "1", "3", "4", "4a", "4b", "unknown"],
+        ),
     ],
 )
 def test_sort(vals, exp):
