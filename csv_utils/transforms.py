@@ -304,15 +304,19 @@ class RenameValue(Transform):
     """
     Renames a value or values in a given column of a DataFrame.
 
+    .. note::
+        Passing ``mapping`` as a list of tuples is supported to enable jsonargparse instantiation when
+        keys contain spaces. However, the mapping is converted to a dictionary internally.
+
     Args:
         column: The column on which to perform the value renaming.
-        mapping: A dictionary containing the old value(s) as keys and the new value(s) as values.
+        mapping: Defines the mapping of old to new values. Can be a dictionary mapping or a list of mapping tuples.
         as_string: If True, compare values as strings.
         output_column: The name of the column to store the result. If None, the original column is updated in place.
     """
 
     column: str
-    mapping: Dict[Any, Any]
+    mapping: Dict[Any, Any] | List[Tuple[Any, Any]]
     default: Any | None = None
     as_string: bool = False
     output_column: str | None = None
@@ -320,6 +324,7 @@ class RenameValue(Transform):
     def __post_init__(self):
         if not self.mapping:
             raise ValueError("mapping cannot be empty")
+        self.mapping = dict(self.mapping) if isinstance(self.mapping, list) else self.mapping
 
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
         # Validate inputs
@@ -327,6 +332,7 @@ class RenameValue(Transform):
             raise KeyError(f"column {self.column} not in table.columns {table.columns}")
 
         mapping = self.mapping
+        assert isinstance(mapping, dict)
         if self.as_string:
             mapping = {str(k): v for k, v in mapping.items()}
 

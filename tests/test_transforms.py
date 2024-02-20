@@ -234,6 +234,7 @@ def test_rename_column(df_factory, old_name, new_name, copy, exp):
         assert list(result.columns) == exp
 
 
+@pytest.mark.parametrize("as_dict", [True, False])
 @pytest.mark.parametrize(
     "as_string,col,old_value,new_value,exp",
     [
@@ -253,9 +254,9 @@ def test_rename_column(df_factory, old_name, new_name, copy, exp):
         pytest.param(True, "col2", 1, "one", ["one", 4, 7, 10, 13, 16, 19, 22, 25, 28]),
     ],
 )
-def test_rename_value(df_factory, as_string, col, old_value, new_value, exp):
+def test_rename_value(df_factory, as_string, col, old_value, new_value, as_dict, exp):
     df = df_factory()
-    mapping = {old_value: new_value}
+    mapping = {old_value: new_value} if as_dict else [(old_value, new_value)]
     result = RenameValue(col, mapping, as_string=as_string)(df)
     assert list(result[col]) == exp
 
