@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from csv_utils.transforms import (
+    Cast,
     Discretize,
     DropWhere,
     GroupValues,
@@ -476,3 +477,28 @@ def test_sort_columns():
     df = pd.DataFrame({"b": [1, 2], "a": [3, 4]})
     output = sort_columns(df)
     assert output.columns.tolist() == ["a", "b"]
+
+
+@pytest.mark.parametrize(
+    "col,dtype,errors,exp",
+    [
+        pytest.param("col1", "int", "raise", int),
+        pytest.param("col1", "str", "raise", object),
+        pytest.param("col1", "float", "raise", float),
+        pytest.param("col2", "int", "raise", int),
+        pytest.param(["col1", "col2"], "float", "raise", float),
+        pytest.param("col1", "bool", "raise", bool),
+        pytest.param(None, "bool", "raise", bool),
+    ],
+)
+def test_cast(df_factory, col, dtype, errors, exp):
+    df = df_factory()
+    result = Cast(col, dtype, errors)(df)
+    if isinstance(col, str):
+        assert result[col].dtype == exp
+    elif col is not None:
+        for c in col:
+            assert result[c].dtype == exp
+    else:
+        for c in df.columns:
+            assert result[c].dtype == exp
