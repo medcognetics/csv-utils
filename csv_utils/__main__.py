@@ -21,6 +21,7 @@ def main(args: Namespace) -> None:
         args.inputs,
         args.aggregator,
         args.transforms,
+        args.aggregation_groups,
     )
     output = OUTPUT_REGISTRY.get(args.output).instantiate_with_metadata()
     output(df, args.dest)
@@ -61,6 +62,14 @@ def parse_args() -> Namespace:
         default="print",
         type=StrOrCallable,
         help="registered names of output handlers",
+    )
+    parser.add_argument(
+        "-g",
+        "--aggregation-groups",
+        default=[],
+        type=int,
+        nargs="+",
+        help="indices of input sources to aggregate together",
     )
     cfg = parser.parse_args()
     return parser.instantiate_classes(cfg)
