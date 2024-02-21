@@ -460,6 +460,11 @@ class TestSummarize:
             ["1", "4", "3", "unknown", "4b", "4a", "0"],
             ["0", "1", "3", "4", "4a", "4b", "unknown"],
         ),
+        pytest.param(
+            ["False", "False", "unknown"],
+            [...],
+            marks=pytest.mark.xfail(raises=ValueError, strict=True),
+        ),
     ],
 )
 def test_sort(vals, exp):

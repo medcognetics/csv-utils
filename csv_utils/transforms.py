@@ -521,7 +521,7 @@ def sort(
     **kwargs,
 ) -> List[Any]:
     r"""
-    Sorts a sequence of values.
+    Sorts a sequence of unique values.
 
     This function is robust to intervals with comparison operators.
     It uses a regular expression to extract the first numeric value (if any) from each key and
@@ -533,7 +533,7 @@ def sort(
         For example, "1 <= x < 2" or "1-2" is valid, but "2 < x <= 1" or "2-1" is not.
 
     Args:
-        values: The values to sort.
+        values: The values to sort. Values should be unique.
         ascending: If True, sort in ascending order. Otherwise, sort in descending order.
         numeric_first: If True, sort numeric values before strings. Otherwise, sort strings before numeric values.
         parse_dates: If True, attempt to interpret the values as dates and sort them accordingly.
@@ -577,6 +577,9 @@ def sort(
             elif val.startswith(">"):
                 result = sys.float_info.max
         return result
+
+    if not len(values) == len(set(values)):
+        raise ValueError("Values for sorting must be unique")
 
     # The sort keys may be a mixture of float and str, so we need to compare them separately
     sort_keys = {assign_sort_key(k): k for k in values}
