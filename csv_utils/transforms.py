@@ -608,3 +608,38 @@ def sort_columns(df: pd.DataFrame, ascending: bool = True) -> pd.DataFrame:
         The sorted DataFrame.
     """
     return df[sort(list(df.columns), ascending=ascending)]
+
+
+@dataclass
+class Cast(Transform):
+    """
+    Casts or coerces a column to a new dtype.
+
+    Args:
+        column: Column or columns to cast. If ``None``, all columns will be cast.
+        dtype: The new dtype to cast to. Will be passed to :func:`pandas.DataFrame.astype`.
+        errors: How to handle errors in the cast. Will be passed to :func:`pandas.DataFrame.astype`.
+
+    Returns:
+        The DataFrame with the column or columns casted to the new dtype.
+    """
+
+    column: str | Sequence[str] | None
+    dtype: Any = "str"
+    errors: str = "raise"
+
+    def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
+        columns = (
+            [self.column]
+            if isinstance(self.column, str)
+            else list(self.column)
+            if self.column is not None
+            else list(table.columns)
+        )
+
+        for column in columns:
+            if column not in table.columns:
+                raise KeyError(f"column {column} not in table.columns {table.columns}")
+            table[column] = table[column].astype(self.dtype, errors=cast(Any, self.errors))
+
+        return table
