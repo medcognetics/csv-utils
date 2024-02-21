@@ -101,6 +101,19 @@ def test_concat(df_factory):
     assert (df == df_factory()).all().all()
 
 
+@pytest.mark.parametrize("join", ["inner", "outer"])
+def test_concat_join(df_factory, join):
+    df1 = df_factory().iloc[:2].loc[:, ("col1",)]
+    df2 = df_factory().iloc[2:4].loc[:, ("col2",)]
+    df3 = df_factory().iloc[4:].loc[:, ("col3",)]
+    df = concat([df1, df2, df3], join=join)
+    if join == "inner":
+        assert not df.size
+    else:
+        assert (df.columns == df_factory().columns).all()
+        assert len(df) == len(df_factory())
+
+
 def test_join_or_concat(df_factory):
     df1 = df_factory(columns=["col1", "col2"]).iloc[:4]
     df2 = df_factory(columns=["col1", "col2"]).iloc[4:]

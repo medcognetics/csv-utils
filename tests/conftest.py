@@ -10,14 +10,17 @@ import pytest
 @pytest.fixture(scope="session")
 def df_factory():
     def func(
-        columns: Iterable[str] = ["col1", "col2", "col3"], num_rows: int = 10, as_str: bool = False
+        columns: Iterable[str] = ["col1", "col2", "col3"],
+        num_rows: int = 10,
+        as_str: bool = False,
+        offset: int = 0,
     ) -> pd.DataFrame:
         columns = list(columns)
         rows = []
         for r_idx in range(num_rows):
             entry = {}
             for c_idx, c in enumerate(columns):
-                val = r_idx * len(columns) + c_idx
+                val = r_idx * len(columns) + c_idx + offset
                 if as_str:
                     val = f"entry-{val}"
                 entry[c] = val
