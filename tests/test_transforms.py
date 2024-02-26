@@ -262,12 +262,17 @@ def test_rename_value(df_factory, as_string, col, old_value, new_value, as_dict,
     assert list(result[col]) == exp
 
 
-def test_rename_value_mask(df_factory):
-    df = df_factory()
+@pytest.mark.parametrize("mask_value", [0, 1])
+def test_rename_value_mask(df_factory, mask_value):
+    df = df_factory(columns=["col1", "col2"])
+    df["col1"] = 0
+    df["col2"] = np.arange(len(df)) % 2
     mapping = {0: "zero"}
-    transform = RenameValue("col1", mapping, mask_column="col2", mask_value=1)
-    result = transform(df)
-    assert result["col1"].iloc[0] == "zero"
+    transform = RenameValue("col1", mapping, mask_column="col2", mask_value=mask_value)
+    result = transform(df.copy())
+    mask = df["col2"] == mask_value
+    assert (result.loc[mask, "col1"] == "zero").all()
+    assert (result.loc[~mask, "col1"] == df.loc[~mask, "col1"]).all()
 
 
 @pytest.mark.parametrize(
