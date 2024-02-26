@@ -101,7 +101,7 @@ class KeepWhere(Transform):
         contains: if True, use `in` instead of `==`. String comparisons only.
     """
     column: Union[str, Sequence[str]]
-    value: Any
+    value: Any | Sequence[Any]
     as_string: bool = True
     allow_empty: bool = False
     contains: bool = False
@@ -109,6 +109,7 @@ class KeepWhere(Transform):
     def __post_init__(self):
         if isinstance(self.column, str):
             self.column = [self.column]
+            self.value = [self.value]
         else:
             if not isinstance(self.value, Sequence):
                 raise TypeError(f"value {self.value} must be a sequence if column is a sequence")
@@ -127,7 +128,7 @@ class KeepWhere(Transform):
 
     def get_mask(self, table: pd.DataFrame) -> Any:
         if len(self.column) == 1:
-            return self._get_mask_for_column(table, self.column[0], self.value)
+            return self._get_mask_for_column(table, self.column[0], self.value[0])
         else:
             return np.logical_and.reduce(
                 [self._get_mask_for_column(table, c, v) for c, v in zip(self.column, self.value)]
@@ -313,8 +314,13 @@ class RenameValue(Transform):
     Args:
         column: The column on which to perform the value renaming.
         mapping: Defines the mapping of old to new values. Can be a dictionary mapping or a list of mapping tuples.
+        default: The default value to use if the old value is not found in the mapping. If None, the original value is used.
         as_string: If True, compare values as strings.
         output_column: The name of the column to store the result. If None, the original column is updated in place.
+        mask_column: The column or columns to use as a row mask for the transformation. If None, all rows are transformed.
+            This is passed to :class:`KeepWhere` to filter the rows to transform.
+        mask_value: The value or values to use as a row mask for the transformation. If None, all rows are transformed.
+            This is passed to :class:`KeepWhere` to filter the rows to transform.
     """
 
     column: str
@@ -322,11 +328,17 @@ class RenameValue(Transform):
     default: Any | None = None
     as_string: bool = False
     output_column: str | None = None
+    mask_column: str | Sequence[str] | None = None
+    mask_value: Any | Sequence[Any] | None = None
 
     def __post_init__(self):
         if not self.mapping:
             raise ValueError("mapping cannot be empty")
         self.mapping = dict(self.mapping) if isinstance(self.mapping, list) else self.mapping
+        self.mask_column = to_list(self.mask_column) if self.mask_column is not None else None
+        self.mask_value = to_list(self.mask_value) if self.mask_value is not None else None
+        if self.mask_column and not self.mask_value:
+            raise ValueError("`mask_column` cannot be set without `mask_value`")
 
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
         # Validate inputs
@@ -343,8 +355,15 @@ class RenameValue(Transform):
             return mapping.get(str(value) if self.as_string else value, default)
 
         output_column = self.output_column if self.output_column is not None else self.column
-        table.loc[:, output_column] = table.loc[:, self.column].apply(_rename_value)
+        table.loc[self._get_mask(table), output_column] = table.loc[:, self.column].apply(_rename_value)
         return table
+
+    def _get_mask(self, table: pd.DataFrame) -> Any:
+        if self.mask_column:
+            assert self.mask_value
+            func = KeepWhere(self.mask_column, self.mask_value, allow_empty=True)
+            table = func(table)
+        return table.index
 
 
 @dataclass
