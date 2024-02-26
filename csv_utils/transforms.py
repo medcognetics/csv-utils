@@ -337,6 +337,8 @@ class RenameValue(Transform):
         self.mapping = dict(self.mapping) if isinstance(self.mapping, list) else self.mapping
         self.mask_column = to_list(self.mask_column) if self.mask_column is not None else None
         self.mask_value = to_list(self.mask_value) if self.mask_value is not None else None
+        if self.mask_column and not self.mask_value:
+            raise ValueError("`mask_column` cannot be set without `mask_value`")
 
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
         # Validate inputs
@@ -358,6 +360,7 @@ class RenameValue(Transform):
 
     def _get_mask(self, table: pd.DataFrame) -> Any:
         if self.mask_column:
+            assert self.mask_value
             func = KeepWhere(self.mask_column, self.mask_value, allow_empty=True)
             table = func(table)
         return table.index
