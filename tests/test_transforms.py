@@ -129,6 +129,16 @@ def test_keep_where_missing_column(df_factory, allow_missing):
     assert not result
 
 
+def test_keep_where_logical_or(df_factory):
+    df = df_factory()
+    df["col1"] = df["col1"] % 2
+    df["col2"] = df["col2"] // 4
+    df.loc[df["col2"] == 3, "col1"] = 1
+    result = KeepWhere(["col1", "col2"], [0, 3], logical_and=False)(df)
+    assert ((result["col1"] == 0) | (result["col2"] == 3)).all()
+    assert len(result) == 5
+
+
 @pytest.mark.parametrize(
     "col,value,as_str,allow_empty,exp",
     [
@@ -169,6 +179,16 @@ def test_drop_where_empty(col, value, exp):
 def test_drop_where_missing_col(df_factory, allow_missing):
     df = df_factory()
     DropWhere("NOT_HERE", 0, allow_missing_column=allow_missing)(df)
+
+
+def test_drop_where_logical_or(df_factory):
+    df = df_factory()
+    df["col1"] = df["col1"] % 2
+    df["col2"] = df["col2"] // 4
+    df.loc[df["col2"] == 3, "col1"] = 1
+    result = DropWhere(["col1", "col2"], [0, 3], logical_and=False)(df)
+    assert not ((result["col1"] == 0) | (result["col2"] == 3)).any()
+    assert len(result) == 5
 
 
 @pytest.mark.parametrize(
