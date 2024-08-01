@@ -82,7 +82,7 @@ class Discretize(Transform):
             if i == 0:
                 result.append(f"< {b}")
             else:
-                result.append(f"{bins[i-1]} <= x < {b}")
+                result.append(f"{bins[i - 1]} <= x < {b}")
         result.append(f">= {bins[-1]}")
         return result
 
@@ -91,7 +91,7 @@ class Discretize(Transform):
 class KeepWhere(Transform):
     r"""Keep rows where `column == value`. If `column` is a sequence, then
     `value` must be a sequence of the same length, and the mask is the
-    logical and of the masks for each column/value pair.
+    logical and/or of the masks for each column/value pair depending on the `logical_and` flag.
 
     Args:
         column: column or columns to filter on
@@ -99,12 +99,16 @@ class KeepWhere(Transform):
         as_string: if True, convert value to string before comparison
         allow_empty: if True, allow empty result
         contains: if True, use `in` instead of `==`. String comparisons only.
+        logical_and: if True, use logical and instead of logical or.
+            Only applies if `column` is a sequence. Otherwise use a logical or.
     """
+
     column: Union[str, Sequence[str]]
     value: Any | Sequence[Any]
     as_string: bool = True
     allow_empty: bool = False
     contains: bool = False
+    logical_and: bool = True
 
     def __post_init__(self):
         if isinstance(self.column, str):
@@ -130,9 +134,8 @@ class KeepWhere(Transform):
         if len(self.column) == 1:
             return self._get_mask_for_column(table, self.column[0], self.value[0])
         else:
-            return np.logical_and.reduce(
-                [self._get_mask_for_column(table, c, v) for c, v in zip(self.column, self.value)]
-            )
+            reducer = np.logical_and if self.logical_and else np.logical_or
+            return reducer.reduce([self._get_mask_for_column(table, c, v) for c, v in zip(self.column, self.value)])
 
     def _get_mask_for_column(self, table: pd.DataFrame, col: str, value: Any) -> Any:
         if value is None or value is pd.NA:
@@ -210,8 +213,11 @@ class DropWhere(KeepWhere):
         as_string: if True, convert value to string before comparison
         allow_empty: if True, allow empty result
         contains: if True, use `in` instead of `==`. String comparisons only.
+        logical_and: if True, use logical and instead of logical or.
+            Only applies if `column` is a sequence. Otherwise use a logical or.
         allow_missing_column: if True, allow missing column
     """
+
     allow_missing_column: bool = False
 
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
@@ -230,7 +236,7 @@ class KeepColumns(Transform):
 
     def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
         columns = [c for c in self.columns if c in table.columns]
-        return table[columns]
+        return cast(pd.DataFrame, table[columns])
 
 
 @dataclass
@@ -242,6 +248,7 @@ class GroupValues(Transform):
         sources: The values to group together.
         dest: The value to replace the sources with.
     """
+
     colname: str
     sources: Union[str, Sequence[str]]
     dest: str
@@ -492,6 +499,7 @@ class Summarize:
         * KeyError: If ``col`` is not in ``df``.
         * KeyError: If ``groupby`` contains a column that is not in ``df``.
     """
+
     column: str
     groupby: List[str] = field(default_factory=list)
 
@@ -519,7 +527,7 @@ class Summarize:
         for group in self.groupby:
             for category in df[group].unique():
                 keep = df[group] == category
-                subtables[category] = _create_cols(df[keep], self.column)
+                subtables[category] = _create_cols(cast(pd.DataFrame, df[keep]), self.column)
         summary = pd.concat(subtables, axis=1)
         summary.fillna(0, inplace=True)
 
@@ -626,7 +634,7 @@ def sort_columns(df: pd.DataFrame, ascending: bool = True) -> pd.DataFrame:
     Returns:
         The sorted DataFrame.
     """
-    return df[sort(list(df.columns), ascending=ascending)]
+    return cast(pd.DataFrame, df[sort(list(df.columns), ascending=ascending)])
 
 
 @dataclass
@@ -651,9 +659,7 @@ class Cast(Transform):
         columns = (
             [self.column]
             if isinstance(self.column, str)
-            else list(self.column)
-            if self.column is not None
-            else list(table.columns)
+            else list(self.column) if self.column is not None else list(table.columns)
         )
 
         for column in columns:

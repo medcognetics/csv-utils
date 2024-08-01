@@ -18,6 +18,7 @@ class PivotTableCounts(Transform):
         total: The values in ``index`` to aggregate in order to produce a total row.
             If ``None``, no total row will be produced.
     """
+
     index: str | Sequence[str]
     columns: str | Sequence[str] | None = None
     total: str | Sequence[str] | None = None
@@ -27,9 +28,7 @@ class PivotTableCounts(Transform):
         columns: List[str] = (
             [self.columns]
             if isinstance(self.columns, str)
-            else list(self.columns)
-            if self.columns is not None
-            else [c for c in table.columns if c not in index]
+            else list(self.columns) if self.columns is not None else [c for c in table.columns if c not in index]
         )
 
         # Create pivot table
