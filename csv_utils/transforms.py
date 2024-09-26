@@ -72,6 +72,11 @@ class Discretize(Transform):
 
         # map bin assignments to clean string names
         discretized = [name_dict.get(g, "NA") for g in groups]
+
+        # explicitly cast target column to string
+        if self.output_column in df.columns:
+            df[self.output_column] = df[self.output_column].astype(str)
+
         df.loc[cast(Any, valid), self.output_column] = discretized
         return df
 
