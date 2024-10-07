@@ -263,6 +263,7 @@ class GroupValues(Transform):
             raise KeyError(f"column {self.colname} not in table.columns {table.columns}")
         sources = [self.sources] if isinstance(self.sources, str) else self.sources
         mask = table[self.colname].isin(sources)
+        table[self.colname] = table[self.colname].astype(str)
         table.loc[mask, self.colname] = self.dest
         return table
 
@@ -367,7 +368,10 @@ class RenameValue(Transform):
             return mapping.get(str(value) if self.as_string else value, default)
 
         output_column = self.output_column if self.output_column is not None else self.column
-        table.loc[self._get_mask(table), output_column] = table.loc[:, self.column].apply(_rename_value)
+        new = table.loc[:, self.column].apply(_rename_value)
+        if new.dtype != table[output_column].dtype:
+            table[output_column] = table[output_column].astype(new.dtype)
+        table.loc[self._get_mask(table), output_column] = new
         return table
 
     def _get_mask(self, table: pd.DataFrame) -> Any:
