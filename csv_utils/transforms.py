@@ -677,3 +677,18 @@ class Cast(Transform):
             table[column] = table[column].astype(self.dtype, errors=cast(Any, self.errors))
 
         return table
+
+
+@dataclass
+class FillNA(Transform):
+    """
+    Fills NaN values.
+
+    Args:
+        value: The value to fill NaN values with.
+    """
+
+    value: Any
+
+    def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
+        return table.fillna(self.value)
