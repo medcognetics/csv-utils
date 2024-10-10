@@ -205,7 +205,6 @@ def test_drop_where_logical_or(df_factory):
         pytest.param("col1", [0, 2, 4, 6, 8, 10], False, None, "2 <= x < 4"),
         pytest.param("col1", [0, 2, 4, 6, 8, 10], False, "Dest Column", "2 <= x < 4"),
         pytest.param("col1", [0, 2, 4, 6, 8, 10], False, "col1", "2 <= x < 4"),
-        pytest.param("col1", [0, 2, 4, 6, 8, 10], False, "col1", "2 <= x < 4"),
     ],
 )
 def test_discretize(df_factory, col, interval, round_output, output_colname, exp):
@@ -214,7 +213,6 @@ def test_discretize(df_factory, col, interval, round_output, output_colname, exp
     df[col] = np.random.rand(len(df[col])) * 10
     df.loc[0, col] = 2.0
     df.loc[1, col] = pd.NA
-    df["col3"] = df["col3"].astype("Int64")
     transform = Discretize(col, interval, output_colname, round_output)
     result = transform(df)
     assert len(result) == len(df)
