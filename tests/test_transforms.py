@@ -193,25 +193,27 @@ def test_drop_where_logical_or(df_factory):
 
 
 @pytest.mark.parametrize(
-    "col,interval,output_colname,exp",
+    "col,interval,round_output,output_colname,exp",
     [
-        pytest.param("col1", [0, 2, 4, 6, 8, 10], None, "2 <= x < 4"),
-        pytest.param("col1", [0, 1.5, 3.0, 6, 8, 10], None, "1.5 <= x < 3.0"),
-        pytest.param("col1", [3, 4, 5], None, "< 3"),
-        pytest.param("col1", [0, 1, 2], None, ">= 2"),
-        pytest.param("col2", [0, 2, 4, 6, 8, 10], None, "2 <= x < 4"),
-        pytest.param("col1", [0, 2, 4, 6, 8, 10], "Dest Column", "2 <= x < 4"),
-        pytest.param("col1", [0, 2, 4, 6, 8, 10], "col1", "2 <= x < 4"),
-        pytest.param("col1", [0, 2, 4, 6, 8, 10], "col1", "2 <= x < 4"),
+        pytest.param("col1", [0, 2, 4, 6, 8, 10], False, None, "2 <= x < 4"),
+        pytest.param("col1", [0, 1.5, 3.0, 6, 8, 10], False, None, "1.5 <= x < 3.0"),
+        pytest.param("col1", [3, 4, 5], False, None, "< 3"),
+        pytest.param("col1", [0, 1, 2], False, None, ">= 2"),
+        pytest.param("col2", [0, 2, 4, 6, 8, 10], False, None, "2 <= x < 4"),
+        pytest.param("col2", [0.0, 2.0, 4.0, 6.0, 8.0, 10.0], False, None, "2.0 <= x < 4.0"),
+        pytest.param("col2", [0.0, 2.0, 4.0, 6.0, 8.0, 10.0], True, None, "2 <= x < 4"),
+        pytest.param("col1", [0, 2, 4, 6, 8, 10], False, None, "2 <= x < 4"),
+        pytest.param("col1", [0, 2, 4, 6, 8, 10], False, "Dest Column", "2 <= x < 4"),
+        pytest.param("col1", [0, 2, 4, 6, 8, 10], False, "col1", "2 <= x < 4"),
     ],
 )
-def test_discretize(df_factory, col, interval, output_colname, exp):
+def test_discretize(df_factory, col, interval, round_output, output_colname, exp):
     np.random.seed(42)
     df = df_factory()
     df[col] = np.random.rand(len(df[col])) * 10
     df.loc[0, col] = 2.0
     df.loc[1, col] = pd.NA
-    transform = Discretize(col, interval, output_colname)
+    transform = Discretize(col, interval, output_colname, round_output)
     result = transform(df)
     assert len(result) == len(df)
 

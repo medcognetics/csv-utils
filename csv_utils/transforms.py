@@ -48,9 +48,20 @@ def to_list(x: I | Iterable[I]) -> List[I]:
 
 @dataclass
 class Discretize(Transform):
+    """
+    Discretizes a column into specified intervals.
+
+    Args:
+        column: The column to discretize.
+        intervals: The intervals to use for discretization.
+        output_column: The column to store the discretized values. If None, the original column will be used.
+        round_output: If True, round the interval boundaries in the output.
+    """
+
     column: str
     intervals: Sequence[float]
     output_column: Optional[str] = None
+    round_output: bool = False
 
     def __post_init__(self):
         if self.output_column is None:
@@ -66,7 +77,7 @@ class Discretize(Transform):
         # get bin assignment for each item
         col = cast(pd.Series, pd.to_numeric(df[self.column], errors="coerce"))
         valid = ~col.isna()
-        names = self._bins_to_index(self.intervals)
+        names = self._bins_to_index(self.intervals, round_output=self.round_output)
         name_dict = {i: v for i, v in enumerate(names)}
         groups = cast(List[Any], np.digitize(col[valid], self.intervals).tolist())
 
@@ -81,14 +92,22 @@ class Discretize(Transform):
         return df
 
     @classmethod
-    def _bins_to_index(cls, bins: Sequence[float]) -> Sequence[str]:
+    def _bins_to_index(cls, bins: Sequence[float], round_output: bool = False) -> Sequence[str]:
         result: List[str] = []
         for i, b in enumerate(bins):
+            if round_output:
+                b = round(b)
+                prev_b = round(bins[i - 1])
+            else:
+                prev_b = bins[i - 1]
+
             if i == 0:
                 result.append(f"< {b}")
             else:
-                result.append(f"{bins[i - 1]} <= x < {b}")
-        result.append(f">= {bins[-1]}")
+                result.append(f"{prev_b} <= x < {b}")
+
+        last_b = round(bins[-1]) if round_output else bins[-1]
+        result.append(f">= {last_b}")
         return result
 
 
