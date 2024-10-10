@@ -677,3 +677,27 @@ class Cast(Transform):
             table[column] = table[column].astype(self.dtype, errors=cast(Any, self.errors))
 
         return table
+
+
+@dataclass
+class FillNA(Transform):
+    """Fill NaN values.
+
+    This transforms handles casting for nullable dtypes.
+
+    Args:
+        value: The value to fill NaN values with.
+    """
+
+    value: Any
+
+    def __call__(self, table: pd.DataFrame) -> pd.DataFrame:
+        table = table.copy()
+        columns_with_na = table.columns[table.isna().any()]
+        for column in columns_with_na:
+            try:
+                table[column] = table[column].fillna(self.value)
+            except TypeError:
+                table[column] = table[column].astype(pd.StringDtype(), errors="ignore")
+                table[column] = table[column].fillna(self.value)
+        return table
