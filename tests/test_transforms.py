@@ -10,6 +10,7 @@ from csv_utils.transforms import (
     Cast,
     Discretize,
     DropWhere,
+    FillNA,
     GroupValues,
     KeepColumns,
     KeepWhere,
@@ -539,3 +540,22 @@ def test_cast(df_factory, col, dtype, errors, exp):
     else:
         for c in df.columns:
             assert result[c].dtype == exp
+
+
+@pytest.mark.parametrize(
+    "source_dtype,value",
+    [
+        (np.float64, 0),
+        (np.float64, "na"),
+        ("Int64", 0),
+        ("Int64", "na"),
+        ("Float64", 0),
+        ("Float64", "na"),
+    ],
+)
+def test_fillna(df_factory, source_dtype, value):
+    df = df_factory()
+    df["col1"] = df["col1"].astype(source_dtype)
+    df.loc[0, "col1"] = np.nan
+    result = FillNA(value)(df)
+    assert result.loc[0, "col1"] == value
